@@ -1,9 +1,4 @@
 <Solution>
-  <Folder Name="/grabs/">
-    <Project Path="lib/grabs/src/grabs.Core/grabs.Core.csproj" />
-    <Project Path="lib/grabs/src/grabs.Graphics/grabs.Graphics.csproj" />
-    <Project Path="lib/grabs/src/grabs.ShaderCompiler/grabs.ShaderCompiler.csproj" />
-  </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Crimson.Engine.Tests/Crimson.Engine.Tests.csproj" />
     <Project Path="tests/Crimson.Math.Tests/Crimson.Math.Tests.csproj" />
