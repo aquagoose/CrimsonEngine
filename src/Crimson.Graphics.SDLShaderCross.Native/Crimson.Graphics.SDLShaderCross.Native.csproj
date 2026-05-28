@@ -7,10 +7,11 @@
     </PropertyGroup>
     
     <ItemGroup>
-        <!--<Content Include="runtimes/linux-x64/*" CopyToOutputDirectory="Always" />
-        <Content Include="runtimes/osx-arm64/*" CopyToOutputDirectory="Always" />
-        <Content Include="runtimes/win-x64/*" CopyToOutputDirectory="Always" />-->
-        <Content Include="runtimes/**/*" CopyToOutputDirectory="Always" />
+        <Content Include="*.so" CopyToOutputDirectory="Always" />
+        <Content Include="*.so.*" CopyToOutputDirectory="Always" />
+        <Content Include="*.dll" CopyToOutputDirectory="Always" />
+        <Content Include="*.dylib" CopyToOutputDirectory="Always" />
+        <!--<Content Include="runtimes/**/*" CopyToOutputDirectory="Always" />-->
     </ItemGroup>
 
 </Project>
