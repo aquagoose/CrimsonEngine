@@ -5,31 +5,31 @@ using Crimson.Core;
 using Crimson.Graphics.Utils;
 using Crimson.Math;
 using Hexa.NET.ImGui;
-using SDL3;
+using piko.SDL3;
 
 namespace Crimson.Graphics.Renderers;
 
 internal sealed class ImGuiRenderer : IDisposable
 {
-    private readonly IntPtr _device;
+    private readonly SDL.GPUDevice _device;
     
     private readonly ImGuiContextPtr _imguiContext;
 
     private uint _vBufferSize;
     private uint _iBufferSize;
 
-    private IntPtr _vertexBuffer;
-    private IntPtr _indexBuffer;
-    private IntPtr _transferBuffer;
+    private SDL.GPUBuffer _vertexBuffer;
+    private SDL.GPUBuffer _indexBuffer;
+    private SDL.GPUTransferBuffer _transferBuffer;
 
-    private IntPtr _pipeline;
+    private SDL.GPUGraphicsPipeline _pipeline;
 
-    private IntPtr? _texture;
-    private IntPtr _sampler;
+    private SDL.GPUTexture? _texture;
+    private SDL.GPUSampler _sampler;
 
     public ImGuiContextPtr Context => _imguiContext;
     
-    public unsafe ImGuiRenderer(IntPtr device, Size<int> size, SDL.GPUTextureFormat outFormat, RendererOptions.ImGuiInfo info)
+    public unsafe ImGuiRenderer(SDL.GPUDevice device, Size<int> size, SDL.GPUTextureFormat outFormat, RendererOptions.ImGuiInfo info)
     {
         _device = device;
 
@@ -48,7 +48,7 @@ internal sealed class ImGuiRenderer : IDisposable
         _transferBuffer = SdlUtils.CreateTransferBuffer(_device, SDL.GPUTransferBufferUsage.Upload,
             vBufferSizeBytes + iBufferSizeBytes);
 
-        ShaderUtils.LoadGraphicsShader(_device, "Debug/ImGui", out IntPtr? vertexShader, out IntPtr? pixelShader);
+        ShaderUtils.LoadGraphicsShader(_device, "Debug/ImGui", out SDL.GPUShader? vertexShader, out SDL.GPUShader? pixelShader);
 
         SDL.GPUColorTargetDescription targetDesc = new()
         {
@@ -81,19 +81,19 @@ internal sealed class ImGuiRenderer : IDisposable
             TargetInfo = new SDL.GPUGraphicsPipelineTargetInfo()
             {
                 NumColorTargets = 1,
-                ColorTargetDescriptions = new IntPtr(&targetDesc)
+                ColorTargetDescriptions = &targetDesc
             },
             VertexInputState = new SDL.GPUVertexInputState()
             {
                 NumVertexBuffers = 1,
-                VertexBufferDescriptions = new IntPtr(&vertexBufferDesc),
+                VertexBufferDescriptions = &vertexBufferDesc,
                 NumVertexAttributes = 3,
-                VertexAttributes = (nint) vertexAttributes
+                VertexAttributes = vertexAttributes
             },
-            PrimitiveType = SDL.GPUPrimitiveType.TriangleList
+            PrimitiveType = SDL.GPUPrimitiveType.Trianglelist
         };
 
-        _pipeline = SDL.CreateGPUGraphicsPipeline(_device, in pipelineInfo).Check("Create pipeline");
+        _pipeline = SDL.CreateGPUGraphicsPipeline(_device, &pipelineInfo).Check("Create pipeline");
         
         SDL.ReleaseGPUShader(_device, pixelShader.Value);
         SDL.ReleaseGPUShader(_device, vertexShader.Value);
@@ -108,7 +108,7 @@ internal sealed class ImGuiRenderer : IDisposable
             MaxLod = 1000
         };
 
-        _sampler = SDL.CreateGPUSampler(_device, in samplerInfo).Check("Create sampler");
+        _sampler = SDL.CreateGPUSampler(_device, &samplerInfo).Check("Create sampler");
 
         ImGuiIOPtr io = ImGui.GetIO();
         io.DisplaySize = new Vector2(size.Width, size.Height);
@@ -130,7 +130,7 @@ internal sealed class ImGuiRenderer : IDisposable
         ImGui.NewFrame();
     }
 
-    public unsafe bool Render(IntPtr cb, IntPtr colorTarget, bool shouldClear)
+    public unsafe bool Render(SDL.GPUCommandBuffer cb, SDL.GPUTexture colorTarget, bool shouldClear)
     {
         ImGui.SetCurrentContext(_imguiContext);
         
@@ -181,8 +181,8 @@ internal sealed class ImGuiRenderer : IDisposable
         uint vertexOffset = 0;
         uint indexOffset = 0;
 
-        void* mappedPtr =
-            (void*) SDL.MapGPUTransferBuffer(_device, _transferBuffer, true).Check("Map transfer buffer");
+        // todo reintroduce check
+        void* mappedPtr = SDL.MapGPUTransferBuffer(_device, _transferBuffer, 1);
         
         for (int i = 0; i < drawData.CmdListsCount; i++)
         {
@@ -201,7 +201,7 @@ internal sealed class ImGuiRenderer : IDisposable
         
         SDL.UnmapGPUTransferBuffer(_device, _transferBuffer);
 
-        IntPtr copyPass = SDL.BeginGPUCopyPass(cb).Check("Begin copy pass");
+        SDL.GPUCopyPass copyPass = SDL.BeginGPUCopyPass(cb).Check("Begin copy pass");
 
         SDL.GPUTransferBufferLocation vertexSource = new()
         {
@@ -216,7 +216,7 @@ internal sealed class ImGuiRenderer : IDisposable
             Size = vertexOffset
         };
         
-        SDL.UploadToGPUBuffer(copyPass, in vertexSource, in vertexDest, false);
+        SDL.UploadToGPUBuffer(copyPass, &vertexSource, &vertexDest, 0);
 
         SDL.GPUTransferBufferLocation indexSource = new()
         {
@@ -231,7 +231,7 @@ internal sealed class ImGuiRenderer : IDisposable
             Size = indexOffset
         };
         
-        SDL.UploadToGPUBuffer(copyPass, in indexSource, in indexDest, false);
+        SDL.UploadToGPUBuffer(copyPass, &indexSource, &indexDest, 0);
         
         SDL.EndGPUCopyPass(copyPass);
         
@@ -241,7 +241,7 @@ internal sealed class ImGuiRenderer : IDisposable
             drawData.DisplayPos.X + drawData.DisplaySize.X, drawData.DisplayPos.Y + drawData.DisplaySize.Y,
             drawData.DisplayPos.Y, -1, 1);
         
-        SDL.PushGPUVertexUniformData(cb, 0, new IntPtr(&projection), 64);
+        SDL.PushGPUVertexUniformData(cb, 0, &projection, 64);
         
         SdlUtils.PushDebugGroup(cb, "ImGUI Pass");
 
@@ -253,7 +253,7 @@ internal sealed class ImGuiRenderer : IDisposable
             StoreOp = SDL.GPUStoreOp.Store
         };
 
-        IntPtr renderPass = SDL.BeginGPURenderPass(cb, new IntPtr(&targetInfo), 1, IntPtr.Zero)
+        SDL.GPURenderPass renderPass = SDL.BeginGPURenderPass(cb, &targetInfo, 1, null)
             .Check("Begin render pass");
         
         SDL.BindGPUGraphicsPipeline(renderPass, _pipeline);
@@ -267,7 +267,7 @@ internal sealed class ImGuiRenderer : IDisposable
             MinDepth = 0,
             MaxDepth = 1
         };
-        SDL.SetGPUViewport(renderPass, in viewport);
+        SDL.SetGPUViewport(renderPass, &viewport);
 
         SDL.GPUBufferBinding vertexBinding = new()
         {
@@ -275,7 +275,7 @@ internal sealed class ImGuiRenderer : IDisposable
             Offset = 0
         };
         
-        SDL.BindGPUVertexBuffers(renderPass, 0, new IntPtr(&vertexBinding), 1);
+        SDL.BindGPUVertexBuffers(renderPass, 0, &vertexBinding, 1);
 
         SDL.GPUBufferBinding indexBinding = new()
         {
@@ -283,7 +283,7 @@ internal sealed class ImGuiRenderer : IDisposable
             Offset = 0
         };
 
-        SDL.BindGPUIndexBuffer(renderPass, in indexBinding, SDL.GPUIndexElementSize.IndexElementSize16Bit);
+        SDL.BindGPUIndexBuffer(renderPass, &indexBinding, SDL.GPUIndexElementSize.Size16bit);
 
         vertexOffset = 0;
         indexOffset = 0;
@@ -300,10 +300,10 @@ internal sealed class ImGuiRenderer : IDisposable
                 if (drawCmd.UserCallback != null)
                     continue;
 
-                IntPtr texture = _texture!.Value;
+                SDL.GPUTexture texture = _texture!.Value;
 
                 if (drawCmd.TextureId != ImTextureID.Null)
-                    texture = (IntPtr) drawCmd.TextureId.Handle;
+                    texture = new SDL.GPUTexture((nint) drawCmd.TextureId.Handle);
                 
                 Vector2 clipMin = new Vector2(drawCmd.ClipRect.X - clipOff.X, drawCmd.ClipRect.Y - clipOff.Y);
                 Vector2 clipMax = new Vector2(drawCmd.ClipRect.Z - clipOff.X, drawCmd.ClipRect.W - clipOff.Y);
@@ -319,7 +319,7 @@ internal sealed class ImGuiRenderer : IDisposable
                     H = (int) clipMax.Y - (int) clipMin.Y
                 };
 
-                SDL.SetGPUScissor(renderPass, in scissorRect);
+                SDL.SetGPUScissor(renderPass, &scissorRect);
 
                 SDL.GPUTextureSamplerBinding samplerBinding = new()
                 {
@@ -327,7 +327,7 @@ internal sealed class ImGuiRenderer : IDisposable
                     Sampler = _sampler
                 };
 
-                SDL.BindGPUFragmentSamplers(renderPass, 0, new IntPtr(&samplerBinding), 1);
+                SDL.BindGPUFragmentSamplers(renderPass, 0, &samplerBinding, 1);
 
                 SDL.DrawGPUIndexedPrimitives(renderPass, drawCmd.ElemCount, 1, drawCmd.IdxOffset + indexOffset,
                     (short) (drawCmd.VtxOffset + vertexOffset), 0);
@@ -362,7 +362,7 @@ internal sealed class ImGuiRenderer : IDisposable
         io.Fonts.GetTexDataAsRGBA32(&imagePixels, &width, &height);
 
         _texture = SdlUtils.CreateTexture2D(_device, (nint) imagePixels, (uint) width, (uint) height,
-            SDL.GPUTextureFormat.R8G8B8A8Unorm, 1);
+            SDL.GPUTextureFormat.R8g8b8a8Unorm, 1);
     }
 
     public void Dispose()

@@ -1,6 +1,6 @@
 using Crimson.Graphics.Materials;
 using Crimson.Graphics.Utils;
-using SDL3;
+using piko.SDL3;
 
 namespace Crimson.Graphics;
 
@@ -10,11 +10,11 @@ namespace Crimson.Graphics;
 /// </summary>
 public class Renderable : IDisposable
 {
-    private readonly IntPtr _device;
+    private readonly SDL.GPUDevice _device;
     
-    internal readonly IntPtr VertexBuffer;
+    internal readonly SDL.GPUBuffer VertexBuffer;
     
-    internal readonly IntPtr IndexBuffer;
+    internal readonly SDL.GPUBuffer IndexBuffer;
 
     internal readonly uint NumIndices;
 

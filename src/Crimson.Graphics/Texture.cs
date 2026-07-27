@@ -3,7 +3,7 @@ using Crimson.Content;
 using Crimson.Core;
 using Crimson.Graphics.Utils;
 using Crimson.Math;
-using SDL3;
+using piko.SDL3;
 
 namespace Crimson.Graphics;
 
@@ -14,11 +14,11 @@ public class Texture : IContentResource<Texture>, IDisposable
 {
     public bool IsDisposed { get; private set; }
     
-    private readonly IntPtr _device;
+    private readonly SDL.GPUDevice _device;
     private readonly bool _generateMipmaps;
     private readonly bool _isOwnedByRenderer;
     
-    internal readonly IntPtr TextureHandle;
+    internal readonly SDL.GPUTexture TextureHandle;
 
     /// <summary>
     /// The texture's friendly name, if any.
@@ -33,7 +33,7 @@ public class Texture : IContentResource<Texture>, IDisposable
     /// <summary>
     /// The Texture's ID.
     /// </summary>
-    public ulong ID => (ulong) TextureHandle;
+    public ulong ID => (ulong) TextureHandle.Handle;
 
     /// <summary>
     /// Create an empty <see cref="Texture"/>.
@@ -44,7 +44,7 @@ public class Texture : IContentResource<Texture>, IDisposable
     /// <param name="numMipMaps">The number of mipmaps the texture contains. Set to 1 for no mipmaps. Set to 0 to
     /// generate a full set of mipmaps automatically, if the <paramref name="format"/> allows. For any other value, you
     /// will be expected to upload mipmaps manually through the <see cref="Update"/> method.</param>
-    public Texture(in Size<int> size, PixelFormat format, string? name = null, uint numMipMaps = 0)
+    public unsafe Texture(in Size<int> size, PixelFormat format, string? name = null, uint numMipMaps = 0)
     {
         Name = name;
         Size = size;
@@ -67,7 +67,7 @@ public class Texture : IContentResource<Texture>, IDisposable
 
         SDL.GPUTextureCreateInfo textureInfo = new()
         {
-            Type = SDL.GPUTextureType.TextureType2D,
+            Type = SDL.GPUTextureType.Type2d,
             Format = format.ToSdl(out _),
             Width = (uint) size.Width,
             Height = (uint) size.Height,
@@ -77,7 +77,7 @@ public class Texture : IContentResource<Texture>, IDisposable
         };
 
         Logger.Trace("Creating texture.");
-        TextureHandle = SDL.CreateGPUTexture(_device, in textureInfo).Check("Create texture");
+        TextureHandle = SDL.CreateGPUTexture(_device, &textureInfo).Check("Create texture");
         
         if (name != null)
             SDL.SetGPUTextureName(_device, TextureHandle, name);
@@ -122,7 +122,7 @@ public class Texture : IContentResource<Texture>, IDisposable
     /// </remarks>
     public Texture(DDS dds, string? name = null) : this(dds.Size, dds.Format, name, dds.MipLevels)
     {
-        IntPtr cb = SDL.AcquireGPUCommandBuffer(_device).Check("Acquire command buffer");
+        SDL.GPUCommandBuffer cb = SDL.AcquireGPUCommandBuffer(_device).Check("Acquire command buffer");
         
         for (uint i = 0; i < dds.MipLevels; i++)
         {
@@ -139,7 +139,7 @@ public class Texture : IContentResource<Texture>, IDisposable
                 MipLevel = i
             };
         
-            Renderer.UpdateTexture(cb, in dest, bitmap.Data);
+            Renderer.UpdateTexture(cb, dest, bitmap.Data);
         }
         
         SDL.SubmitGPUCommandBuffer(cb).Check("Submit command buffer");
@@ -152,7 +152,7 @@ public class Texture : IContentResource<Texture>, IDisposable
     ///// <param name="name">The texture's name used during debugging, if any. If nothing is provided, the path will be used.</param>
     public Texture(string path) : this(new Bitmap(path), path) { }
 
-    internal Texture(IntPtr textureHandle, Size<int> size, string name)
+    internal Texture(SDL.GPUTexture textureHandle, Size<int> size, string name)
     {
         Name = name;
         Size = size;
@@ -168,7 +168,7 @@ public class Texture : IContentResource<Texture>, IDisposable
     /// <param name="mipLevel">The mipmap level, if applicable.</param>
     public void Update(Rectangle<int> region, byte[] data, uint mipLevel = 0)
     {
-        IntPtr cb = SDL.AcquireGPUCommandBuffer(_device).Check("Acquire command buffer");
+        SDL.GPUCommandBuffer cb = SDL.AcquireGPUCommandBuffer(_device).Check("Acquire command buffer");
 
         SDL.GPUTextureRegion dest = new()
         {
@@ -181,7 +181,7 @@ public class Texture : IContentResource<Texture>, IDisposable
             MipLevel = mipLevel
         };
         
-        Renderer.UpdateTexture(cb, in dest, data);
+        Renderer.UpdateTexture(cb, dest, data);
 
         SDL.SubmitGPUCommandBuffer(cb).Check("Submit command buffer");
 

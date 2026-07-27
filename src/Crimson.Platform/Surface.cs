@@ -2,7 +2,7 @@
 using Crimson.Core;
 using Crimson.Graphics;
 using Crimson.Math;
-using SDL3;
+using piko.SDL3;
 using StbImageSharp;
 
 namespace Crimson.Platform;
@@ -15,23 +15,24 @@ public static class Surface
     private static string _title;
     private static string _details;
     
-    internal static IntPtr Window;
+    internal static SDL.Window Window;
 
     /// <summary>
     /// The surface's size, in pixels.
     /// </summary>
     /// <remarks><see cref="set_Size"/> may not be available on all platforms.</remarks>
-    public static Size<int> Size
+    public static unsafe Size<int> Size
     {
         get
         {
-            SDL.GetWindowSizeInPixels(Window, out int w, out int h);
+            int w, h;
+            SDL.GetWindowSizeInPixels(Window, &w, &h);
             return new Size<int>(w, h);
         }
         set
         {
             SDL.SetWindowSize(Window, value.Width, value.Height);
-            SDL.SetWindowPosition(Window, (int) SDL.WindowPosCentered(), (int) SDL.WindowPosCentered());
+            SDL.SetWindowPosition(Window, (int) SDL.WindowposCentered, (int) SDL.WindowposCentered);
         }
     }
 
@@ -58,7 +59,7 @@ public static class Surface
     public static bool Fullscreen
     {
         get => (SDL.GetWindowFlags(Window) & SDL.WindowFlags.Fullscreen) != 0;
-        set => SDL.SetWindowFullscreen(Window, value);
+        set => SDL.SetWindowFullscreen(Window, (byte) (value ? 1 : 0));
     }
 
     /// <summary>
@@ -68,7 +69,7 @@ public static class Surface
     public static bool CursorVisible
     {
         get => SDL.GetWindowRelativeMouseMode(Window);
-        set => SDL.SetWindowRelativeMouseMode(Window, !value);
+        set => SDL.SetWindowRelativeMouseMode(Window, (byte) (!value ? 1 : 0));
     }
     
     /// <summary>
@@ -86,31 +87,32 @@ public static class Surface
         }
     }
 
-    public static VideoMode? VideoMode
+    public static unsafe VideoMode? VideoMode
     {
         get
         {
-            SDL.DisplayMode? mode = SDL.GetWindowFullscreenMode(Window);
-            if (mode is { } displayMode)
+            SDL.DisplayMode* mode = SDL.GetWindowFullscreenMode(Window);
+            if (mode != null)
             {
-                return new VideoMode(new Size<int>(displayMode.W, displayMode.H), displayMode.RefreshRate);
+                return new VideoMode(new Size<int>(mode->W, mode->H), mode->RefreshRate);
             }
 
             return null;
         }
     }
 
-    public static VideoMode[] AvailableVideoModes
+    public static unsafe VideoMode[] AvailableVideoModes
     {
         get
         {
-            SDL.DisplayMode[]? modes = SDL.GetFullscreenDisplayModes(SDL.GetDisplayForWindow(Window), out int count);
+            int count;
+            SDL.DisplayMode** modes = SDL.GetFullscreenDisplayModes(SDL.GetDisplayForWindow(Window), &count);
             VideoMode[] vidModes = new VideoMode[count];
 
             for (int i = 0; i < count; i++)
             {
-                SDL.DisplayMode mode = modes[i];
-                vidModes[i] = new VideoMode(new Size<int>(mode.W, mode.H), mode.RefreshRate);
+                SDL.DisplayMode* mode = modes[i];
+                vidModes[i] = new VideoMode(new Size<int>(mode->W, mode->H), mode->RefreshRate);
             }
             
             return vidModes;
@@ -193,29 +195,29 @@ public static class Surface
         Logger.Trace("Creating window.");
         Window = SDL.CreateWindow(_title, options.Size.Width, options.Size.Height, flags);
 
-        if (Window == IntPtr.Zero)
+        if (Window.IsNull)
             throw new Exception($"Failed to create window: {SDL.GetError()}");
 
         if (File.Exists("Icon.png"))
         {
             ImageResult result =
                 ImageResult.FromMemory(File.ReadAllBytes("Icon.png"), ColorComponents.RedGreenBlueAlpha);
-            
-            IntPtr surface;
 
             unsafe
             {
+                SDL.Surface* surface;
+
                 fixed (byte* pData = result.Data)
                 {
-                    surface = SDL.CreateSurfaceFrom(result.Width, result.Height, SDL.PixelFormat.ABGR8888,
-                        (IntPtr) pData, result.Width * 4);
+                    surface = SDL.CreateSurfaceFrom(result.Width, result.Height, SDL.PixelFormat.Abgr8888, pData,
+                        result.Width * 4);
                 }
-            }
 
-            SDL.SetWindowIcon(Window, surface);
+                SDL.SetWindowIcon(Window, surface);
+            }
         }
 
-        if (EnvVar.TryGetInt(EnvVar.SurfaceDisplay, out int displayId))
+        /*if (EnvVar.TryGetInt(EnvVar.SurfaceDisplay, out int displayId))
         {
             uint[]? displays = SDL.GetDisplays(out _);
             Debug.Assert(displays != null);
@@ -225,7 +227,7 @@ public static class Surface
                 int centered = (int) SDL.WindowPosCenteredDisplay((int) displays[displayId]);
                 SDL.SetWindowPosition(Window, centered, centered);
             }
-        }
+        }*/
     }
 
     /// <summary>

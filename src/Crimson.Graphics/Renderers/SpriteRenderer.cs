@@ -1,6 +1,6 @@
 using Crimson.Graphics.Renderers.Structs;
 using Crimson.Math;
-using SDL3;
+using piko.SDL3;
 
 namespace Crimson.Graphics.Renderers;
 
@@ -8,7 +8,7 @@ internal class SpriteRenderer : IDisposable
 {
     private readonly TextureBatcher _batcher;
 
-    public SpriteRenderer(IntPtr device, SDL.GPUTextureFormat swapchainFormat)
+    public SpriteRenderer(SDL.GPUDevice device, SDL.GPUTextureFormat swapchainFormat)
     {
         _batcher = new TextureBatcher(device, swapchainFormat);
     }
@@ -26,7 +26,7 @@ internal class SpriteRenderer : IDisposable
             new Rectangle<int>(Vector2T<int>.Zero, sprite.Texture.Size), Color.White, BlendMode.Blend));
     }
 
-    public bool Render(IntPtr cb, IntPtr swapchainTarget, bool shouldClear, Size<int> swapchainSize, CameraMatrices matrices)
+    public bool Render(SDL.GPUCommandBuffer cb, SDL.GPUTexture swapchainTarget, bool shouldClear, Size<int> swapchainSize, CameraMatrices matrices)
     {
         return _batcher.Render(cb, swapchainTarget, shouldClear, swapchainSize, matrices);
     }

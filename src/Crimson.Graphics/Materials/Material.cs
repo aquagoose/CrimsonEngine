@@ -1,6 +1,6 @@
 using Crimson.Graphics.Utils;
 using Crimson.Math;
-using SDL3;
+using piko.SDL3;
 
 namespace Crimson.Graphics.Materials;
 
@@ -9,9 +9,9 @@ namespace Crimson.Graphics.Materials;
 /// </summary>
 public abstract class Material : IDisposable
 {
-    private readonly IntPtr _device;
+    private readonly SDL.GPUDevice _device;
     
-    internal readonly IntPtr Pipeline;
+    internal readonly SDL.GPUGraphicsPipeline Pipeline;
     
     public Texture Albedo;
 
@@ -51,7 +51,7 @@ public abstract class Material : IDisposable
         _device = Renderer.Device;
 
         // TODO: Probably best not to load this shader every time a material is created.
-        ShaderUtils.LoadGraphicsShader(_device, shader, out IntPtr? vertexShader, out IntPtr? pixelShader);
+        ShaderUtils.LoadGraphicsShader(_device, shader, out SDL.GPUShader? vertexShader, out SDL.GPUShader? pixelShader);
 
         SDL.GPUVertexBufferDescription vertexBufferDesc = new()
         {
@@ -75,10 +75,10 @@ public abstract class Material : IDisposable
 
         SDL.GPUColorTargetDescription* colorTargets = stackalloc SDL.GPUColorTargetDescription[]
         {
-            new SDL.GPUColorTargetDescription { Format = SDL.GPUTextureFormat.R32G32B32A32Float }, // Albedo
-            new SDL.GPUColorTargetDescription { Format = SDL.GPUTextureFormat.R32G32B32A32Float }, // Position
-            new SDL.GPUColorTargetDescription { Format = SDL.GPUTextureFormat.R32G32B32A32Float }, // Normal
-            new SDL.GPUColorTargetDescription { Format = SDL.GPUTextureFormat.R32G32B32A32Float } // MetallicRoughness
+            new SDL.GPUColorTargetDescription { Format = SDL.GPUTextureFormat.R32g32b32a32Float }, // Albedo
+            new SDL.GPUColorTargetDescription { Format = SDL.GPUTextureFormat.R32g32b32a32Float }, // Position
+            new SDL.GPUColorTargetDescription { Format = SDL.GPUTextureFormat.R32g32b32a32Float }, // Normal
+            new SDL.GPUColorTargetDescription { Format = SDL.GPUTextureFormat.R32g32b32a32Float } // MetallicRoughness
         };
 
         SDL.GPUGraphicsPipelineCreateInfo pipelineInfo = new()
@@ -88,18 +88,18 @@ public abstract class Material : IDisposable
             TargetInfo = new SDL.GPUGraphicsPipelineTargetInfo()
             {
                 NumColorTargets = 4,
-                ColorTargetDescriptions = (nint) colorTargets,
+                ColorTargetDescriptions = colorTargets,
                 HasDepthStencilTarget = true,
                 DepthStencilFormat = SDL.GPUTextureFormat.D32Float
             },
             VertexInputState = new SDL.GPUVertexInputState()
             {
                 NumVertexBuffers = 1,
-                VertexBufferDescriptions = new IntPtr(&vertexBufferDesc),
+                VertexBufferDescriptions = &vertexBufferDesc,
                 NumVertexAttributes = 4,
-                VertexAttributes = (nint) vertexAttributes
+                VertexAttributes = vertexAttributes
             },
-            PrimitiveType = SDL.GPUPrimitiveType.TriangleList,
+            PrimitiveType = SDL.GPUPrimitiveType.Trianglelist,
             DepthStencilState = new SDL.GPUDepthStencilState()
             {
                 EnableDepthTest = true,
@@ -125,7 +125,7 @@ public abstract class Material : IDisposable
             }
         };
 
-        Pipeline = SDL.CreateGPUGraphicsPipeline(_device, in pipelineInfo);
+        Pipeline = SDL.CreateGPUGraphicsPipeline(_device, &pipelineInfo);
         
         SDL.ReleaseGPUShader(_device, pixelShader.Value);
         SDL.ReleaseGPUShader(_device, vertexShader.Value);

@@ -1,5 +1,7 @@
+using System.Runtime.InteropServices;
 using Crimson.Core;
-using SDL3;
+using piko.SDL3;
+using piko.SDL3.ShaderCross;
 
 namespace Crimson.Graphics.Utils;
 
@@ -55,7 +57,7 @@ internal static class ShaderUtils
         }
     }*/
     
-    public static void LoadGraphicsShader(IntPtr device, string name, out IntPtr? vertexShader, out IntPtr? pixelShader)
+    public static void LoadGraphicsShader(SDL.GPUDevice device, string name, out SDL.GPUShader? vertexShader, out SDL.GPUShader? pixelShader)
     {
         Logger.Trace($"Compiling shader '{name}'.");
 
@@ -118,80 +120,87 @@ internal static class ShaderUtils
         }
     }
 
-    private static unsafe IntPtr CreateShader(IntPtr device, SDL.GPUShaderStage stage, SDL.GPUShaderFormat shaderFormat,
+    private static unsafe SDL.GPUShader CreateShader(SDL.GPUDevice device, SDL.GPUShaderStage stage, SDL.GPUShaderFormat shaderFormat,
         string hlsl, string entryPoint, string? includeDir, bool debug, uint numUniforms, uint numSamplers)
     {
-        ShaderCross.HLSLInfo hlslInfo = new()
+        sbyte* pHlsl = (sbyte*) Marshal.StringToHGlobalAnsi(hlsl);
+        sbyte* pEntryPoint = (sbyte*) Marshal.StringToHGlobalAnsi(entryPoint);
+        sbyte* pIncludeDir = (sbyte*) Marshal.StringToHGlobalAnsi(includeDir);
+
+        SDLShaderCross.HLSLInfo hlslInfo = new()
         {
-            ShaderStage = (ShaderCross.ShaderStage) stage,
-            Source = hlsl,
-            Entrypoint = entryPoint,
-            IncludeDir = includeDir
+            ShaderStage = (SDLShaderCross.ShaderStage) stage,
+            Source = pHlsl,
+            Entrypoint = pEntryPoint,
+            IncludeDir = pIncludeDir
         };
         
         SDL.GPUShaderCreateInfo shaderInfo = new()
         {
             Stage = stage,
             Format = shaderFormat,
-            Entrypoint = entryPoint,
+            Entrypoint = pEntryPoint,
             NumSamplers = numSamplers,
             NumUniformBuffers = numUniforms
         };
         
-        if ((shaderFormat & SDL.GPUShaderFormat.DXIL) != 0)
+        if ((shaderFormat & SDL.GPUShaderFormat.Dxil) != 0)
         {
-            IntPtr dxil = ShaderCross.CompileDXILFromHLSL(in hlslInfo, out nuint dxilSize);
-            if (dxil == 0)
+            nuint dxilSize;
+            void* dxil = SDLShaderCross.CompileDXILFromHLSL(&hlslInfo, &dxilSize);
+            if (dxil == null)
                 throw new Exception($"Failed to compile shader: {SDL.GetError()}");
             
-            shaderInfo.Code = dxil;
+            shaderInfo.Code = (byte*) dxil;
             shaderInfo.CodeSize = dxilSize;
-            shaderInfo.Format = SDL.GPUShaderFormat.DXIL;
+            shaderInfo.Format = SDL.GPUShaderFormat.Dxil;
         }
-        else if ((shaderFormat & SDL.GPUShaderFormat.DXBC) != 0)
+        else if ((shaderFormat & SDL.GPUShaderFormat.Dxbc) != 0)
         {
-            IntPtr dxbc = ShaderCross.CompileDXBCFromHLSL(in hlslInfo, out nuint dxbcSize);
-            if (dxbc == 0)
+            nuint dxbcSize;
+            void* dxbc = SDLShaderCross.CompileDXBCFromHLSL(&hlslInfo, &dxbcSize);
+            if (dxbc == null)
                 throw new Exception($"Failed to compile shader: {SDL.GetError()}");
             
-            shaderInfo.Code = dxbc;
+            shaderInfo.Code = (byte*) dxbc;
             shaderInfo.CodeSize = dxbcSize;
-            shaderInfo.Format = SDL.GPUShaderFormat.DXBC;
+            shaderInfo.Format = SDL.GPUShaderFormat.Dxbc;
         }
         else
         {
-            IntPtr spirv = ShaderCross.CompileSPIRVFromHLSL(in hlslInfo, out nuint spirvSize);
-            if (spirv == 0)
+            nuint spirvSize;
+            void* spirv = SDLShaderCross.CompileSPIRVFromHLSL(&hlslInfo, &spirvSize);
+            if (spirv == null)
                 throw new Exception($"Failed to compile shader: {SDL.GetError()}");
 
-            shaderInfo.Code = spirv;
+            shaderInfo.Code = (byte*) spirv;
             shaderInfo.CodeSize = spirvSize;
 
-            ShaderCross.SPIRVInfo spirvInfo = new()
+            SDLShaderCross.SPIRVInfo spirvInfo = new()
             {
-                ShaderStage = (ShaderCross.ShaderStage) stage,
-                ByteCode = spirv,
-                ByteCodeSize = spirvSize,
-                Entrypoint = entryPoint
+                ShaderStage = (SDLShaderCross.ShaderStage) stage,
+                Bytecode = (byte*) spirv,
+                BytecodeSize = spirvSize,
+                Entrypoint = pEntryPoint
             };
 
-            if ((shaderFormat & SDL.GPUShaderFormat.MSL) != 0)
+            if ((shaderFormat & SDL.GPUShaderFormat.Msl) != 0)
             {
-                IntPtr msl = ShaderCross.TranspileMSLFromSPIRV(in spirvInfo);
-                if (msl == 0)
+                void* msl = SDLShaderCross.TranspileMSLFromSPIRV(&spirvInfo);
+                if (msl == null)
                     throw new Exception($"Failed to transpile SPIRV: {SDL.GetError()}");
                 
-                SDL.Free(spirv);
-                shaderInfo.Code = msl;
+                NativeMemory.Free(spirv);
+                shaderInfo.Code = (byte*) msl;
                 shaderInfo.CodeSize = strlen((sbyte*) msl);
-                shaderInfo.Format = SDL.GPUShaderFormat.MSL;
+                shaderInfo.Format = SDL.GPUShaderFormat.Msl;
             }
         }
 
-        IntPtr shader = SDL.CreateGPUShader(device, in shaderInfo);
-        SDL.Free(shaderInfo.Code);
+        SDL.GPUShader shader = SDL.CreateGPUShader(device, &shaderInfo);
+        NativeMemory.Free(shaderInfo.Code);
         
-        if (shader == 0)
+        if (shader.IsNull)
             throw new Exception($"Failed to create shader: {SDL.GetError()}");
         
         return shader;

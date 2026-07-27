@@ -1,6 +1,6 @@
 using System.Numerics;
 using Crimson.Math;
-using SDL3;
+using piko.SDL3;
 
 namespace Crimson.Platform;
 
@@ -55,7 +55,7 @@ public static class Events
     public static unsafe void ProcessEvents()
     {
         SDL.Event sdlEvent;
-        while (SDL.PollEvent(out sdlEvent))
+        while (SDL.PollEvent(&sdlEvent))
         {
             switch ((SDL.EventType) sdlEvent.Type)
             {
@@ -97,7 +97,7 @@ public static class Events
                 {
                     float scale = SDL.GetWindowPixelDensity(SDL.GetWindowFromID(sdlEvent.Window.WindowID));
                     MouseMove(new Vector2T<float>(sdlEvent.Motion.X, sdlEvent.Motion.Y) * scale,
-                        new Vector2T<float>(sdlEvent.Motion.XRel, sdlEvent.Motion.YRel));
+                        new Vector2T<float>(sdlEvent.Motion.Xrel, sdlEvent.Motion.Yrel));
                     break;
                 }
                 case SDL.EventType.MouseWheel:

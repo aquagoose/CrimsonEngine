@@ -1,4 +1,5 @@
 using Crimson.Math;
+using piko.SDL3;
 
 namespace Crimson.Graphics;
 
@@ -10,14 +11,14 @@ public readonly struct SurfaceInfo
     /// <summary>
     /// The native handle to the surface.
     /// </summary>
-    public readonly nint Handle;
+    public readonly SDL.Window Handle;
 
     /// <summary>
     /// The surface's size.
     /// </summary>
     public readonly Size<int> Size;
 
-    public SurfaceInfo(IntPtr handle, Size<int> size)
+    public SurfaceInfo(SDL.Window handle, Size<int> size)
     {
         Handle = handle;
         Size = size;

@@ -7,7 +7,8 @@ using Crimson.Graphics.Renderers.Structs;
 using Crimson.Graphics.Utils;
 using Crimson.Math;
 using Hexa.NET.ImGui;
-using SDL3;
+using piko.SDL3;
+using piko.SDL3.ShaderCross;
 using Color = Crimson.Math.Color;
 
 namespace Crimson.Graphics;
@@ -20,26 +21,26 @@ public static class Renderer
     private static uint _transferBufferOffset;
     private static uint _transferBufferSize = 32 * 1024 * 1024;
     
-    private static IntPtr _window;
+    private static SDL.Window _window;
     private static Backend _backend;
     
-    private static IntPtr _depthTexture;
+    private static SDL.GPUTexture _depthTexture;
 
     private static bool _vsyncEnabled;
     private static Size<int> _swapchainSize;
 
-    private static IntPtr _transferBuffer;
+    private static SDL.GPUTransferBuffer _transferBuffer;
     
     private static TextureBatcher _uiBatcher;
     private static ImGuiRenderer? _imGuiRenderer;
     private static DeferredRenderer? _deferredRenderer;
     private static SpriteRenderer? _spriteRenderer;
 
-    internal static IntPtr Device;
+    internal static SDL.GPUDevice Device;
 
     internal static SDL.GPUTextureFormat MainTargetFormat;
 
-    internal static HashSet<IntPtr> MipmapQueue;
+    internal static HashSet<SDL.GPUTexture> MipmapQueue;
 
     public static Backend Backend => _backend;
 
@@ -65,8 +66,8 @@ public static class Renderer
                 return;
             
             _vsyncEnabled = value;
-            SDL.SetGPUSwapchainParameters(Device, _window, SDL.GPUSwapchainComposition.SDR,
-                value ? SDL.GPUPresentMode.VSync : SDL.GPUPresentMode.Immediate).Check("Set swapchain parameters");
+            SDL.SetGPUSwapchainParameters(Device, _window, SDL.GPUSwapchainComposition.Sdr,
+                value ? SDL.GPUPresentMode.Vsync : SDL.GPUPresentMode.Immediate).Check("Set swapchain parameters");
         }
     }
 
@@ -101,23 +102,23 @@ public static class Renderer
         SDL.SetAppMetadata(appName, null!, null!);
 
         uint props = SDL.CreateProperties();
-        SDL.SetBooleanProperty(props, SDL.Props.GPUDeviceCreateShadersSPIRVBoolean, true);
+        SDL.SetBooleanProperty(props, SDL.Prop.GpuDeviceCreateShadersSpirvBoolean, 1);
 
         if (options.Debug)
         {
-            SDL.SetBooleanProperty(props, SDL.Props.GPUDeviceCreateDebugModeBoolean, true);
-            SDL.SetBooleanProperty(props, SDL.Props.GPUDeviceCreatePreferLowPowerBoolean, true);
+            SDL.SetBooleanProperty(props, SDL.Prop.GpuDeviceCreateDebugmodeBoolean, 1);
+            SDL.SetBooleanProperty(props, SDL.Prop.GpuDeviceCreatePreferlowpowerBoolean, 1);
         }
 
         if (OperatingSystem.IsWindows() && options.Backend is Backend.Unknown or Backend.D3D12)
         {
-            SDL.SetBooleanProperty(props, SDL.Props.GPUDeviceCreateShadersDXILBoolean, true);
+            SDL.SetBooleanProperty(props, SDL.Prop.GpuDeviceCreateShadersDxilBoolean, 1);
             // Use D3D12 on windows
-            SDL.SetStringProperty(props, SDL.Props.GPUDeviceCreateNameString, "direct3d12");
+            SDL.SetStringProperty(props, SDL.Prop.GpuDeviceCreateNameString, "direct3d12");
         }
 
         if (OperatingSystem.IsMacOS() && options.Backend is Backend.Unknown or Backend.Metal)
-            SDL.SetBooleanProperty(props, SDL.Props.GPUDeviceCreateShadersMSLBoolean, true);
+            SDL.SetBooleanProperty(props, SDL.Prop.GpuDeviceCreateShadersMslBoolean, 1);
 
         Logger.Trace("Creating device.");
         Device = SDL.CreateGPUDeviceWithProperties(props).Check("Create device");
@@ -148,7 +149,7 @@ public static class Renderer
 
         MipmapQueue = [];
         Logger.Trace("Initializing ShaderCross");
-        ShaderCross.Init();
+        SDLShaderCross.Init();
 
         Logger.Debug($"options.Type: {options.Type}");
         Logger.Debug($"options.ImGui.CreateRenderer: {options.ImGui.CreateRenderer}");
@@ -203,7 +204,7 @@ public static class Renderer
         _imGuiRenderer?.Dispose();
         _uiBatcher.Dispose();
         
-        ShaderCross.Quit();
+        SDLShaderCross.Quit();
 
         SDL.ReleaseGPUTransferBuffer(Device, _transferBuffer);
 
@@ -379,11 +380,11 @@ public static class Renderer
     /// <summary>
     /// Render and present to the surface.
     /// </summary>
-    public static void Render()
+    public static unsafe void Render()
     {
-        IntPtr cb = SDL.AcquireGPUCommandBuffer(Device).Check("Acquire command buffer");
+        SDL.GPUCommandBuffer cb = SDL.AcquireGPUCommandBuffer(Device).Check("Acquire command buffer");
 
-        foreach (IntPtr texture in MipmapQueue)
+        foreach (SDL.GPUTexture texture in MipmapQueue)
         {
             Logger.Trace($"Generating mipmaps for texture handle {texture}.");
             SDL.GenerateMipmapsForGPUTexture(cb, texture);
@@ -391,10 +392,10 @@ public static class Renderer
 
         MipmapQueue.Clear();
 
-        SDL.WaitAndAcquireGPUSwapchainTexture(cb, _window, out IntPtr swapchainTexture, out _, out _)
+        SDL.WaitAndAcquireGPUSwapchainTexture(cb, _window, out SDL.GPUTexture swapchainTexture, null, null)
             .Check("Acquire swapchain texture");
 
-        if (swapchainTexture == IntPtr.Zero)
+        if (swapchainTexture.IsNull)
             return;
         
         // Each Render() method returns a boolean. If true, it means the renderer has cleared the target provided as the
@@ -442,7 +443,7 @@ public static class Renderer
         _imGuiRenderer?.Resize(newSize);
     }
 
-    internal static IntPtr GetTransferBuffer(uint size, out uint transferOffset)
+    internal static SDL.GPUTransferBuffer GetTransferBuffer(uint size, out uint transferOffset)
     {
         if (size >= _transferBufferSize)
         {
@@ -463,7 +464,7 @@ public static class Renderer
         return _transferBuffer;
     }
 
-    internal static unsafe void UpdateBuffer<T>(IntPtr cb, IntPtr buffer, uint offset, ReadOnlySpan<T> data) where T : unmanaged
+    internal static unsafe void UpdateBuffer<T>(SDL.GPUCommandBuffer cb, SDL.GPUBuffer buffer, uint offset, ReadOnlySpan<T> data) where T : unmanaged
     {
         // First we ensure the transfer buffer is large enough to fit the buffer in its memory. If it isn't, then create
         // a new buffer.
@@ -475,16 +476,16 @@ public static class Renderer
         // transfer buffers for every buffer update.
         
         uint dataLength = (uint) (data.Length * sizeof(T));
-        IntPtr transferBuffer = GetTransferBuffer(dataLength, out uint transferOffset);
+        SDL.GPUTransferBuffer transferBuffer = GetTransferBuffer(dataLength, out uint transferOffset);
 
         bool cycle = transferOffset == 0;
         Logger.Trace($"Updating buffer {buffer}: Cycle: {cycle}, Offset: {transferOffset}");
-        void* map = (void*) SDL.MapGPUTransferBuffer(Device, transferBuffer, cycle);
+        void* map = (void*) SDL.MapGPUTransferBuffer(Device, transferBuffer, (byte) (cycle ? 1 : 0));
         fixed (void* pData = data)
             Unsafe.CopyBlock((byte*) map + transferOffset, pData, dataLength);
         SDL.UnmapGPUTransferBuffer(Device, transferBuffer);
 
-        IntPtr pass = SDL.BeginGPUCopyPass(cb).Check("Begin copy pass");
+        SDL.GPUCopyPass pass = SDL.BeginGPUCopyPass(cb).Check("Begin copy pass");
 
         SDL.GPUTransferBufferLocation src = new()
         {
@@ -499,27 +500,27 @@ public static class Renderer
             Size = dataLength
         };
         
-        SDL.UploadToGPUBuffer(pass, in src, in dest, false);
+        SDL.UploadToGPUBuffer(pass, &src, &dest, 0);
         
         SDL.EndGPUCopyPass(pass);
     }
 
-    internal static unsafe void UpdateTexture(IntPtr cb, in SDL.GPUTextureRegion region, byte[] data)
+    internal static unsafe void UpdateTexture(SDL.GPUCommandBuffer cb, SDL.GPUTextureRegion region, byte[] data)
     {
         // A similar reuse-buffer-but-cycle-when-necessary method is used here, see the comment in UpdateBuffer to get
         // an idea of how this works.
         
         uint dataLength = (uint) data.Length;
-        IntPtr transferBuffer = GetTransferBuffer(dataLength, out uint transferOffset);
+        SDL.GPUTransferBuffer transferBuffer = GetTransferBuffer(dataLength, out uint transferOffset);
         
         bool cycle = transferOffset == 0;
         Logger.Trace($"Updating texture {region.Texture}: Cycle: {cycle}, Offset: {transferOffset}");
-        void* map = (void*) SDL.MapGPUTransferBuffer(Device, transferBuffer, true);
+        void* map = (void*) SDL.MapGPUTransferBuffer(Device, transferBuffer, 1);
         fixed (byte* pData = data)
             Unsafe.CopyBlock((byte*) map + transferOffset, pData, dataLength);
         SDL.UnmapGPUTransferBuffer(Device, transferBuffer);
 
-        IntPtr pass = SDL.BeginGPUCopyPass(cb).Check("Begin copy pass");
+        SDL.GPUCopyPass pass = SDL.BeginGPUCopyPass(cb).Check("Begin copy pass");
 
         SDL.GPUTextureTransferInfo transferInfo = new()
         {
@@ -528,7 +529,7 @@ public static class Renderer
             PixelsPerRow = region.W
         };
         
-        SDL.UploadToGPUTexture(pass, in transferInfo, in region, false);
+        SDL.UploadToGPUTexture(pass, &transferInfo, &region, 0);
         
         SDL.EndGPUCopyPass(pass);
     }

@@ -2,29 +2,29 @@ using System.Numerics;
 using Crimson.Graphics.Renderers.Structs;
 using Crimson.Graphics.Utils;
 using Crimson.Math;
-using SDL3;
+using piko.SDL3;
 
 namespace Crimson.Graphics.Renderers;
 
 internal class DeferredRenderer : IDisposable
 {
-    private const SDL.GPUTextureFormat GBufferFormat = SDL.GPUTextureFormat.R32G32B32A32Float;
+    private const SDL.GPUTextureFormat GBufferFormat = SDL.GPUTextureFormat.R32g32b32a32Float;
     
-    private readonly IntPtr _device;
+    private readonly SDL.GPUDevice _device;
     
-    private IntPtr _albedoTexture;
-    private IntPtr _positionTexture;
-    private IntPtr _normalTexture;
-    private IntPtr _metallicRoughnessTexture;
+    private SDL.GPUTexture _albedoTexture;
+    private SDL.GPUTexture _positionTexture;
+    private SDL.GPUTexture _normalTexture;
+    private SDL.GPUTexture _metallicRoughnessTexture;
 
-    private readonly IntPtr _passPipeline;
-    private readonly IntPtr _passSampler;
+    private readonly SDL.GPUGraphicsPipeline _passPipeline;
+    private readonly SDL.GPUSampler _passSampler;
 
     private readonly List<DrawCall> _drawQueue;
 
     public Texture[] DebugTextures;
     
-    public unsafe DeferredRenderer(IntPtr device, Size<int> size, SDL.GPUTextureFormat outFormat)
+    public unsafe DeferredRenderer(SDL.GPUDevice device, Size<int> size, SDL.GPUTextureFormat outFormat)
     {
         _device = device;
 
@@ -45,7 +45,7 @@ internal class DeferredRenderer : IDisposable
             new Texture(_metallicRoughnessTexture, size, "Metallic-Roughness-Occlusion")
         ];
 
-        ShaderUtils.LoadGraphicsShader(device, "Deferred/DeferredPass", out IntPtr? passVtx, out IntPtr? passPxl);
+        ShaderUtils.LoadGraphicsShader(device, "Deferred/DeferredPass", out SDL.GPUShader? passVtx, out SDL.GPUShader? passPxl);
 
         SDL.GPUColorTargetDescription targetDesc = new()
         {
@@ -59,12 +59,12 @@ internal class DeferredRenderer : IDisposable
             TargetInfo = new SDL.GPUGraphicsPipelineTargetInfo()
             {
                 NumColorTargets = 1,
-                ColorTargetDescriptions = new IntPtr(&targetDesc)
+                ColorTargetDescriptions = &targetDesc
             },
-            PrimitiveType = SDL.GPUPrimitiveType.TriangleList
+            PrimitiveType = SDL.GPUPrimitiveType.Trianglelist
         };
 
-        _passPipeline = SDL.CreateGPUGraphicsPipeline(_device, in passPipelineInfo).Check("Create graphics pipeline");
+        _passPipeline = SDL.CreateGPUGraphicsPipeline(_device, &passPipelineInfo).Check("Create graphics pipeline");
         
         SDL.ReleaseGPUShader(_device, passPxl.Value);
         SDL.ReleaseGPUShader(_device, passVtx.Value);
@@ -79,7 +79,7 @@ internal class DeferredRenderer : IDisposable
             MaxLod = 1000
         };
 
-        _passSampler = SDL.CreateGPUSampler(_device, in samplerInfo).Check("Create sampler");
+        _passSampler = SDL.CreateGPUSampler(_device, &samplerInfo).Check("Create sampler");
 
         _drawQueue = [];
     }
@@ -89,13 +89,13 @@ internal class DeferredRenderer : IDisposable
         _drawQueue.Add(new DrawCall(renderable, worldMatrix));
     }
 
-    public unsafe bool Render(IntPtr cb, IntPtr compositeTarget, IntPtr depthTexture, CameraMatrices camera)
+    public unsafe bool Render(SDL.GPUCommandBuffer cb, SDL.GPUTexture compositeTarget, SDL.GPUTexture depthTexture, CameraMatrices camera)
     {
         // Don't bother rendering if there is nothing to draw.
         if (_drawQueue.Count == 0)
             return false;
         
-        SDL.PushGPUVertexUniformData(cb, 0, new IntPtr(&camera), CameraMatrices.SizeInBytes);
+        SDL.PushGPUVertexUniformData(cb, 0, &camera, CameraMatrices.SizeInBytes);
         
         #region GBuffer Pass
         
@@ -133,7 +133,7 @@ internal class DeferredRenderer : IDisposable
             StoreOp = SDL.GPUStoreOp.Store
         };
 
-        IntPtr gBufferPass = SDL.BeginGPURenderPass(cb, (nint) gBufferTargets, 4, in depthInfo)
+        SDL.GPURenderPass gBufferPass = SDL.BeginGPURenderPass(cb, gBufferTargets, 4, &depthInfo)
             .Check("Begin gbuffer pass");
 
         // TODO: Position field in CameraMatrices
@@ -152,10 +152,10 @@ internal class DeferredRenderer : IDisposable
             Renderable renderable = draw.Renderable;
             
             Matrix4x4 world = draw.WorldMatrix;
-            SDL.PushGPUVertexUniformData(cb, 1, new IntPtr(&world), 64);
+            SDL.PushGPUVertexUniformData(cb, 1, &world, 64);
 
             MaterialProperties matProps = draw.MaterialProperties;
-            SDL.PushGPUFragmentUniformData(cb, 0, new IntPtr(&matProps), (uint) sizeof(MaterialProperties));
+            SDL.PushGPUFragmentUniformData(cb, 0, &matProps, (uint) sizeof(MaterialProperties));
 
             // TODO: Have a sampler per material.
             bindings[0] = new SDL.GPUTextureSamplerBinding
@@ -189,7 +189,7 @@ internal class DeferredRenderer : IDisposable
                 Sampler = _passSampler,
             };
 
-            SDL.BindGPUFragmentSamplers(gBufferPass, 0, (nint) bindings, numSamplerBindings);
+            SDL.BindGPUFragmentSamplers(gBufferPass, 0, bindings, numSamplerBindings);
 
             SDL.BindGPUGraphicsPipeline(gBufferPass, renderable.Material.Pipeline);
             
@@ -199,7 +199,7 @@ internal class DeferredRenderer : IDisposable
                 Offset = 0
             };
             
-            SDL.BindGPUVertexBuffers(gBufferPass, 0, new IntPtr(&vertexBinding), 1);
+            SDL.BindGPUVertexBuffers(gBufferPass, 0, &vertexBinding, 1);
 
             SDL.GPUBufferBinding indexBinding = new()
             {
@@ -207,7 +207,7 @@ internal class DeferredRenderer : IDisposable
                 Offset = 0
             };
             
-            SDL.BindGPUIndexBuffer(gBufferPass, in indexBinding, SDL.GPUIndexElementSize.IndexElementSize32Bit);
+            SDL.BindGPUIndexBuffer(gBufferPass, &indexBinding, SDL.GPUIndexElementSize.Size32bit);
 
             SDL.DrawGPUIndexedPrimitives(gBufferPass, renderable.NumIndices, 1, 0, 0, 0);
         }
@@ -230,10 +230,10 @@ internal class DeferredRenderer : IDisposable
             ClearColor = new SDL.FColor(0.0f, 0.0f, 0.0f, 1.0f)
         };
 
-        IntPtr lightingPass = SDL.BeginGPURenderPass(cb, new IntPtr(&compositeInfo), 1, IntPtr.Zero)
+        SDL.GPURenderPass lightingPass = SDL.BeginGPURenderPass(cb, &compositeInfo, 1, null)
             .Check("Begin lighting pass");
         
-        SDL.PushGPUFragmentUniformData(cb, 0, new IntPtr(&camera), CameraMatrices.SizeInBytes);
+        SDL.PushGPUFragmentUniformData(cb, 0, &camera, CameraMatrices.SizeInBytes);
         
         SDL.BindGPUGraphicsPipeline(lightingPass, _passPipeline);
 
@@ -261,7 +261,7 @@ internal class DeferredRenderer : IDisposable
             }
         };
 
-        SDL.BindGPUFragmentSamplers(lightingPass, 0, (IntPtr) passBindings, 4);
+        SDL.BindGPUFragmentSamplers(lightingPass, 0, passBindings, 4);
         
         SDL.DrawGPUPrimitives(lightingPass, 6, 1, 0, 0);
         
@@ -308,7 +308,7 @@ internal class DeferredRenderer : IDisposable
         SDL.ReleaseGPUTexture(_device, _albedoTexture);
     }
 
-    private static IntPtr CreateGBufferTexture(IntPtr device, Size<int> size, SDL.GPUTextureFormat format)
+    private static SDL.GPUTexture CreateGBufferTexture(SDL.GPUDevice device, Size<int> size, SDL.GPUTextureFormat format)
     {
         return SdlUtils.CreateTexture2D(device, (uint) size.Width, (uint) size.Height, format, 1,
             SDL.GPUTextureUsageFlags.Sampler | SDL.GPUTextureUsageFlags.ColorTarget);

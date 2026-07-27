@@ -4,7 +4,7 @@ using System.Runtime.CompilerServices;
 using Crimson.Graphics.Renderers.Structs;
 using Crimson.Graphics.Utils;
 using Crimson.Math;
-using SDL3;
+using piko.SDL3;
 
 namespace Crimson.Graphics.Renderers;
 
@@ -16,7 +16,7 @@ internal class TextureBatcher : IDisposable
     private const uint NumVertices = 4;
     private const uint NumIndices = 6;
 
-    private readonly IntPtr _device;
+    private readonly SDL.GPUDevice _device;
 
     private Vertex[] _vertices;
     private uint[] _indices;
@@ -24,20 +24,20 @@ internal class TextureBatcher : IDisposable
     private uint _vBufferSize;
     private uint _iBufferSize;
     
-    private IntPtr _vertexBuffer;
-    private IntPtr _indexBuffer;
+    private SDL.GPUBuffer _vertexBuffer;
+    private SDL.GPUBuffer _indexBuffer;
 
-    private IntPtr _transferBuffer;
+    private SDL.GPUTransferBuffer _transferBuffer;
 
-    private readonly IntPtr _blendPipeline;
-    private readonly IntPtr _noBlendPipeline;
+    private readonly SDL.GPUGraphicsPipeline _blendPipeline;
+    private readonly SDL.GPUGraphicsPipeline _noBlendPipeline;
 
-    private readonly IntPtr _sampler;
+    private readonly SDL.GPUSampler _sampler;
 
     private readonly List<Draw> _drawQueue;
     private readonly List<DrawList> _drawList;
     
-    public unsafe TextureBatcher(IntPtr device, SDL.GPUTextureFormat format)
+    public unsafe TextureBatcher(SDL.GPUDevice device, SDL.GPUTextureFormat format)
     {
         _device = device;
 
@@ -56,7 +56,7 @@ internal class TextureBatcher : IDisposable
         _transferBuffer = SdlUtils.CreateTransferBuffer(device, SDL.GPUTransferBufferUsage.Upload,
             _vBufferSize * Vertex.SizeInBytes + _iBufferSize * sizeof(uint));
 
-        ShaderUtils.LoadGraphicsShader(device, "Texture", out IntPtr? vertexShader, out IntPtr? pixelShader);
+        ShaderUtils.LoadGraphicsShader(device, "Texture", out SDL.GPUShader? vertexShader, out SDL.GPUShader? pixelShader);
 
         SDL.GPUColorTargetDescription targetDesc = new()
         {
@@ -86,15 +86,15 @@ internal class TextureBatcher : IDisposable
         {
             VertexShader = vertexShader.Value,
             FragmentShader = pixelShader.Value,
-            TargetInfo = { NumColorTargets = 1, ColorTargetDescriptions = new IntPtr(&targetDesc) },
+            TargetInfo = { NumColorTargets = 1, ColorTargetDescriptions = &targetDesc },
             VertexInputState = new SDL.GPUVertexInputState()
             {
                 NumVertexAttributes = 3, 
-                VertexAttributes = (nint) vertexAttributes, 
+                VertexAttributes = vertexAttributes,
                 NumVertexBuffers = 1,
-                VertexBufferDescriptions = new IntPtr(&vertexBufferDesc)
+                VertexBufferDescriptions = &vertexBufferDesc
             },
-            PrimitiveType = SDL.GPUPrimitiveType.TriangleList,
+            PrimitiveType = SDL.GPUPrimitiveType.Trianglelist,
             
             DepthStencilState = new SDL.GPUDepthStencilState()
             {
@@ -110,9 +110,9 @@ internal class TextureBatcher : IDisposable
             }
         };
 
-        _blendPipeline = SDL.CreateGPUGraphicsPipeline(device, in pipelineInfo).Check("Create GPU pipeline");
+        _blendPipeline = SDL.CreateGPUGraphicsPipeline(device, &pipelineInfo).Check("Create GPU pipeline");
         targetDesc.BlendState = SdlUtils.NoBlend;
-        _noBlendPipeline = SDL.CreateGPUGraphicsPipeline(device, in pipelineInfo).Check("Create GPU pipeline");
+        _noBlendPipeline = SDL.CreateGPUGraphicsPipeline(device, &pipelineInfo).Check("Create GPU pipeline");
         
         SDL.ReleaseGPUShader(device, pixelShader.Value);
         SDL.ReleaseGPUShader(device, vertexShader.Value);
@@ -127,7 +127,7 @@ internal class TextureBatcher : IDisposable
             MaxLod = 1000
         };
 
-        _sampler = SDL.CreateGPUSampler(_device, in samplerInfo).Check("Create GPU sampler");
+        _sampler = SDL.CreateGPUSampler(_device, &samplerInfo).Check("Create GPU sampler");
 
         _drawQueue = [];
         _drawList = [];
@@ -138,7 +138,7 @@ internal class TextureBatcher : IDisposable
         _drawQueue.Add(draw);
     }
 
-    public unsafe bool Render(IntPtr cb, IntPtr colorTarget, bool shouldClear, Size<int> size, CameraMatrices matrices)
+    public unsafe bool Render(SDL.GPUCommandBuffer cb, SDL.GPUTexture colorTarget, bool shouldClear, Size<int> size, CameraMatrices matrices)
     {
         // Don't even try to draw if the draw count is 0.
         if (_drawQueue.Count == 0)
@@ -194,8 +194,9 @@ internal class TextureBatcher : IDisposable
         
         uint numVertexBytes = bufferOffset * NumVertices * Vertex.SizeInBytes;
         uint numIndexBytes = bufferOffset * NumIndices * sizeof(uint);
-        
-        void* mapped = (void*) SDL.MapGPUTransferBuffer(_device, _transferBuffer, true).Check("Map transfer buffer");
+
+        // todo reintroduce map check
+        void* mapped = (void*) SDL.MapGPUTransferBuffer(_device, _transferBuffer, 1);
         
         fixed (Vertex* pVertices = _vertices)
         fixed (uint* pIndices = _indices)
@@ -208,7 +209,7 @@ internal class TextureBatcher : IDisposable
         
         SdlUtils.PushDebugGroup(cb, "TextureBatcher Copy Pass");
 
-        IntPtr copyPass = SDL.BeginGPUCopyPass(cb).Check("Begin copy pass");
+        SDL.GPUCopyPass copyPass = SDL.BeginGPUCopyPass(cb).Check("Begin copy pass");
 
         SDL.GPUTransferBufferLocation vertexSource = new()
         {
@@ -223,7 +224,7 @@ internal class TextureBatcher : IDisposable
             Size = numVertexBytes
         };
         
-        SDL.UploadToGPUBuffer(copyPass, vertexSource, vertexDest, false);
+        SDL.UploadToGPUBuffer(copyPass, &vertexSource, &vertexDest, 0);
 
         SDL.GPUTransferBufferLocation indexSource = new()
         {
@@ -238,7 +239,7 @@ internal class TextureBatcher : IDisposable
             Size = numIndexBytes
         };
         
-        SDL.UploadToGPUBuffer(copyPass, indexSource, indexDest, false);
+        SDL.UploadToGPUBuffer(copyPass, &indexSource, &indexDest, 0);
         
         SDL.EndGPUCopyPass(copyPass);
         
@@ -254,13 +255,13 @@ internal class TextureBatcher : IDisposable
             StoreOp = SDL.GPUStoreOp.Store
         };
         
-        IntPtr renderPass = SDL.BeginGPURenderPass(cb, new IntPtr(&targetInfo), 1, IntPtr.Zero)
+        SDL.GPURenderPass renderPass = SDL.BeginGPURenderPass(cb, &targetInfo, 1, null)
             .Check("Begin render pass");
 
-        SDL.PushGPUVertexUniformData(cb, 0, new IntPtr(&matrices), CameraMatrices.SizeInBytes);
+        SDL.PushGPUVertexUniformData(cb, 0, &matrices, CameraMatrices.SizeInBytes);
 
-        SDL.SetGPUViewport(renderPass,
-            new SDL.GPUViewport { X = 0, Y = 0, W = size.Width, H = size.Height, MinDepth = 0, MaxDepth = 1 });
+        SDL.GPUViewport viewport = new SDL.GPUViewport(0, 0, size.Width, size.Height, 0, 1);
+        SDL.SetGPUViewport(renderPass, &viewport);
         
         SDL.GPUBufferBinding vertexBinding = new()
         {
@@ -268,7 +269,7 @@ internal class TextureBatcher : IDisposable
             Offset = 0
         };
         
-        SDL.BindGPUVertexBuffers(renderPass, 0, new IntPtr(&vertexBinding), 1);
+        SDL.BindGPUVertexBuffers(renderPass, 0, &vertexBinding, 1);
 
         SDL.GPUBufferBinding indexBinding = new()
         {
@@ -276,7 +277,7 @@ internal class TextureBatcher : IDisposable
             Offset = 0
         };
         
-        SDL.BindGPUIndexBuffer(renderPass, in indexBinding, SDL.GPUIndexElementSize.IndexElementSize32Bit);
+        SDL.BindGPUIndexBuffer(renderPass, &indexBinding, SDL.GPUIndexElementSize.Size32bit);
         
         foreach (DrawList drawList in _drawList)
         {
@@ -292,12 +293,12 @@ internal class TextureBatcher : IDisposable
         return true;
     }
 
-    private unsafe void Flush(IntPtr pass, ref readonly DrawList drawList)
+    private unsafe void Flush(SDL.GPURenderPass pass, ref readonly DrawList drawList)
     {
         Debug.Assert(drawList.NumDraws != 0);
         Debug.Assert(drawList.Texture != null);
 
-        IntPtr pipeline = drawList.Blend switch
+        SDL.GPUGraphicsPipeline pipeline = drawList.Blend switch
         {
             BlendMode.None => _noBlendPipeline,
             BlendMode.Blend => _blendPipeline,
@@ -312,7 +313,7 @@ internal class TextureBatcher : IDisposable
             Texture = drawList.Texture.TextureHandle
         };
         
-        SDL.BindGPUFragmentSamplers(pass, 0, new IntPtr(&samplerBinding), 1);
+        SDL.BindGPUFragmentSamplers(pass, 0, &samplerBinding, 1);
 
         SDL.DrawGPUIndexedPrimitives(pass, drawList.NumDraws * NumIndices, 1, drawList.Offset * NumIndices, 0, 0);
     }

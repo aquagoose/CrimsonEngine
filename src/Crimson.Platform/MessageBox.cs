@@ -1,4 +1,4 @@
-using SDL3;
+using piko.SDL3;
 
 namespace Crimson.Platform;
 
@@ -6,11 +6,11 @@ public static class MessageBox
 {
     public static void Show(Severity severity, string title, string message)
     {
-        SDL.MessageBoxFlags flags = severity switch
+        uint flags = severity switch
         {
-            Severity.Info => SDL.MessageBoxFlags.Information,
-            Severity.Warning => SDL.MessageBoxFlags.Warning,
-            Severity.Error => SDL.MessageBoxFlags.Error,
+            Severity.Info => SDL.MessageboxInformation,
+            Severity.Warning => SDL.MessageboxWarning,
+            Severity.Error => SDL.MessageboxError,
             _ => throw new ArgumentOutOfRangeException(nameof(severity), severity, null)
         };
         
