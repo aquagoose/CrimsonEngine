@@ -1,1 +1,9 @@
-<Solution />
+<Solution>
+  <Project Path="src/Crimson.Audio/Crimson.Audio.csproj" />
+  <Project Path="src/Crimson.Core/Crimson.Core.csproj" />
+  <Project Path="src/Crimson.Engine/Crimson.Engine.csproj" />
+  <Project Path="src/Crimson.Graphics/Crimson.Graphics.csproj" />
+  <Project Path="src/Crimson.Math/Crimson.Math.csproj" />
+  <Project Path="src/Crimson.Physics/Crimson.Physics.csproj" />
+  <Project Path="src/Crimson.Platform/Crimson.Platform.csproj" />
+</Solution>
