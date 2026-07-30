@@ -14,6 +14,7 @@ namespace Crimson.Graphics;
 public class Texture : IDisposable
 {
     private readonly GPUContext _context;
+    private readonly bool _generateMips;
 
     /// <summary>
     /// The SDLGPU texture handle.
@@ -40,8 +41,17 @@ public class Texture : IDisposable
     public unsafe Texture(byte[]? data, Size<uint> size, PixelFormat format, bool generateMips = true)
     {
         _context = Renderer.Context;
+        _generateMips = generateMips;
         Size = size;
         Format = format;
+
+        uint mipLevels = 1;
+        SDL.GPUTextureUsageFlags usage = SDL.GPUTextureUsageFlags.Sampler;
+        if (_generateMips)
+        {
+            mipLevels = SDLUtils.CalculateMipLevels(size.Width, size.Height);
+            usage |= SDL.GPUTextureUsageFlags.ColorTarget;
+        }
 
         SDL.GPUTextureCreateInfo textureInfo = new()
         {
@@ -49,17 +59,22 @@ public class Texture : IDisposable
             Width = Size.Width,
             Height = Size.Height,
             Format = Format.ToSDL(),
-            NumLevels = 1, // todo calculate mip levels
+            NumLevels = mipLevels,
             LayerCountOrDepth = 1,
-            Usage = SDL.GPUTextureUsageFlags.Sampler,
+            Usage = usage,
             SampleCount = SDL.GPUSampleCount.Count1
         };
 
         Logger.Trace($"Creating {Size} texture.");
         Handle = SDL.CreateGPUTexture(_context.Device, &textureInfo).Check("Create texture");
 
-        if (data != null)
-            _context.CopyDataToTexture(Handle, 0, 0, Size, Format, data);
+        if (data == null)
+            return;
+
+        _context.CopyDataToTexture(Handle, 0, 0, Size, Format, data);
+
+        if (_generateMips)
+            Renderer.MipmapQueue.Add(this);
     }
 
     /// <summary>

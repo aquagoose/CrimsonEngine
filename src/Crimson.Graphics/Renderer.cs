@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using Crimson.Core;
 using Crimson.Graphics.SDLGPU;
 using piko.SDL3;
 
@@ -16,6 +17,9 @@ public static class Renderer
     /// </summary>
     internal static GPUContext Context = null!;
 
+    // todo: HashSet<SDL.Texture>: piko doesn't have equality members for handle types, but it should
+    internal static HashSet<Texture> MipmapQueue = null!;
+
     /// <summary>
     /// Initialize the renderer.
     /// </summary>
@@ -25,6 +29,7 @@ public static class Renderer
         Debug.Assert(Context == null, "Renderer has already been initialized!");
         _window = window;
         Context = new GPUContext(window);
+        MipmapQueue = [];
     }
 
     /// <summary>
@@ -45,6 +50,14 @@ public static class Renderer
     public static unsafe void Render()
     {
         SDL.GPUCommandBuffer cb = SDL.AcquireGPUCommandBuffer(Context.Device).Check("Acquire command buffer");
+
+        foreach (Texture texture in MipmapQueue)
+        {
+            Logger.Trace($"Generating mipmaps for texture {texture.Handle.Handle}.");
+            SDL.GenerateMipmapsForGPUTexture(cb, texture.Handle);
+        }
+
+        MipmapQueue.Clear();
 
         SDL.GPUTexture swapchainTexture;
         SDL.WaitAndAcquireGPUSwapchainTexture(cb, _window, &swapchainTexture, null, null)

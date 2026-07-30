@@ -28,6 +28,11 @@ internal static class SDLUtils
         return handle;
     }
 
+    public static uint CalculateMipLevels(uint width, uint height)
+    {
+        return (uint) double.Floor(double.Log2(double.Max(width, height))) + 1;
+    }
+
     public static SDL.GPUTextureFormat ToSDL(this PixelFormat format)
     {
         return format switch
