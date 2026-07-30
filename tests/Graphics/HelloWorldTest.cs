@@ -1,4 +1,4 @@
-﻿#!/usr/bin/env dotnet
+#!/usr/bin/env dotnet
 #:project Crimson.Graphics.Tests.Common
 
 using Crimson.Graphics;

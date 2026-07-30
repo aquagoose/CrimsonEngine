@@ -57,6 +57,9 @@ public class Texture : IDisposable
 
         Logger.Trace($"Creating {Size} texture.");
         Handle = SDL.CreateGPUTexture(_context.Device, &textureInfo).Check("Create texture");
+
+        if (data != null)
+            _context.CopyDataToTexture(Handle, 0, 0, Size, Format, data);
     }
 
     /// <summary>
