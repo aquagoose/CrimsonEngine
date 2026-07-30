@@ -2,4 +2,7 @@
   <ItemGroup>
     <PackageReference Include="piko.SDL3" Version="0.0.4" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Crimson.Core\Crimson.Core.csproj" />
+  </ItemGroup>
 </Project>
