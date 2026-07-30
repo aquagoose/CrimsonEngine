@@ -1,5 +1,7 @@
 <Solution>
-  <Folder Name="/tests/" />
+  <Folder Name="/tests/">
+    <File Path="tests\LoggerTest.cs" />
+  </Folder>
   <Folder Name="/tests/Graphics/">
     <File Path="tests\Graphics\HelloWorldTest.cs" />
     <Project Path="tests/Graphics/Crimson.Graphics.Tests.Common/Crimson.Graphics.Tests.Common.csproj" />
