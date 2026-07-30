@@ -9,6 +9,8 @@ namespace Crimson.Graphics;
 /// </summary>
 public static class Renderer
 {
+    private static SDL.Window _window;
+
     /// <summary>
     /// The <see cref="GPUContext"/> instance, holding an SDL3 GPU device.
     /// </summary>
@@ -21,6 +23,7 @@ public static class Renderer
     public static void Init(SDL.Window window)
     {
         Debug.Assert(Context == null, "Renderer has already been initialized!");
+        _window = window;
         Context = new GPUContext(window);
     }
 
@@ -37,5 +40,35 @@ public static class Renderer
 
 
         Context.Dispose();
+    }
+
+    public static unsafe void Render()
+    {
+        SDL.GPUCommandBuffer cb = SDL.AcquireGPUCommandBuffer(Context.Device).Check("Acquire command buffer");
+
+        SDL.GPUTexture swapchainTexture;
+        SDL.WaitAndAcquireGPUSwapchainTexture(cb, _window, &swapchainTexture, null, null)
+            .Check("Acquire swapchain texture");
+
+        // don't try to render if there is nothing to render to!
+        // https://wiki.libsdl.org/SDL3/SDL_WaitAndAcquireGPUSwapchainTexture#remarks
+        if (swapchainTexture.IsNull)
+        {
+            SDL.CancelGPUCommandBuffer(cb).Check("Cancel command buffer");
+            return;
+        }
+
+        SDL.GPUColorTargetInfo targetInfo = new()
+        {
+            Texture = swapchainTexture,
+            ClearColor = new SDL.FColor(1.0f, 0.5f, 0.25f, 1.0f),
+            LoadOp = SDL.GPULoadOp.Clear,
+            StoreOp = SDL.GPUStoreOp.Store
+        };
+
+        SDL.GPURenderPass pass = SDL.BeginGPURenderPass(cb, &targetInfo, 1, null).Check("Begin render pass");
+        SDL.EndGPURenderPass(pass);
+
+        SDL.SubmitGPUCommandBuffer(cb).Check("Submit command buffer");
     }
 }
