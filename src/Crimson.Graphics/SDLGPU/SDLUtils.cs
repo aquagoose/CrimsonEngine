@@ -27,4 +27,13 @@ internal static class SDLUtils
 
         return handle;
     }
+
+    public static SDL.GPUTextureFormat ToSDL(this PixelFormat format)
+    {
+        return format switch
+        {
+            PixelFormat.RGBA8 => SDL.GPUTextureFormat.R8g8b8a8Unorm,
+            _ => throw new ArgumentOutOfRangeException(nameof(format), format, null)
+        };
+    }
 }
