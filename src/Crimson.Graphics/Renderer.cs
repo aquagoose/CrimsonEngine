@@ -10,6 +10,11 @@ namespace Crimson.Graphics;
 /// </summary>
 public static class Renderer
 {
+    /// <summary>
+    /// Gets if this <see cref="Renderer"/> is initialized.
+    /// </summary>
+    public static bool IsInitialized => Context != null;
+
     private static SDL.Window _window;
 
     /// <summary>
@@ -47,6 +52,9 @@ public static class Renderer
         Context.Dispose();
     }
 
+    /// <summary>
+    /// Render everything to the window.
+    /// </summary>
     public static unsafe void Render()
     {
         SDL.GPUCommandBuffer cb = SDL.AcquireGPUCommandBuffer(Context.Device).Check("Acquire command buffer");

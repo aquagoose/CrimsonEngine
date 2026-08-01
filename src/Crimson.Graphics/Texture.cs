@@ -13,6 +13,11 @@ namespace Crimson.Graphics;
 /// </summary>
 public class Texture : IDisposable
 {
+    /// <summary>
+    /// Gets if this <see cref="Texture"/> has been disposed.
+    /// </summary>
+    public bool IsDisposed { get; private set; }
+
     private readonly GPUContext _context;
     private readonly bool _generateMips;
 
@@ -97,8 +102,15 @@ public class Texture : IDisposable
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public Texture(string path, bool generateMips = true) : this(new Bitmap(path), generateMips) { }
 
+    /// <summary>
+    /// Dispose of this <see cref="Texture"/>.
+    /// </summary>
     public void Dispose()
     {
+        if (IsDisposed)
+            return;
+        IsDisposed = true;
+
         SDL.ReleaseGPUTexture(_context.Device, Handle);
     }
 }
