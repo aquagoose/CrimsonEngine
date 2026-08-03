@@ -156,6 +156,24 @@ internal class GPUContext : IDisposable
         SDL.SubmitGPUCommandBuffer(cb);
     }
 
+    /// <summary>
+    /// Create an empty buffer.
+    /// </summary>
+    public unsafe SDL.GPUBuffer CreateBuffer(SDL.GPUBufferUsageFlags usage, uint size)
+    {
+        SDL.GPUBufferCreateInfo bufferInfo = new()
+        {
+            Usage = usage,
+            Size = size
+        };
+
+        Logger.Trace($"Creating {size / 1024}KiB buffer. Usage flags: {usage}");
+        return SDL.CreateGPUBuffer(Device, &bufferInfo).Check("Create buffer");
+    }
+
+    /// <summary>
+    /// Create a transfer buffer.
+    /// </summary>
     private unsafe SDL.GPUTransferBuffer CreateTransferBuffer(SDL.GPUTransferBufferUsage usage, uint size)
     {
         SDL.GPUTransferBufferCreateInfo transferBufferInfo = new()
@@ -164,7 +182,7 @@ internal class GPUContext : IDisposable
             Size = size
         };
 
-        Logger.Trace($"Creating {size / 1024}KiB transfer buffer.");
+        Logger.Trace($"Creating {size / 1024}KiB {usage} transfer buffer.");
         return SDL.CreateGPUTransferBuffer(Device, &transferBufferInfo).Check("Create transfer buffer");
     }
 

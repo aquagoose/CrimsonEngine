@@ -1,6 +1,6 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
-    <PackageReference Include="piko.SDL3" Version="0.0.4.1" />
+    <PackageReference Include="piko.SDL3" Version="0.0.5" />
     <PackageReference Include="StbImageSharp" Version="2.30.15" />
   </ItemGroup>
   <ItemGroup>
