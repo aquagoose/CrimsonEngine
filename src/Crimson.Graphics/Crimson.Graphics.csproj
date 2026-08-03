@@ -8,14 +8,13 @@
       <ProjectReference Include="..\Crimson.Content\Crimson.Content.csproj" />
       <ProjectReference Include="..\Crimson.Core\Crimson.Core.csproj" />
       <ProjectReference Include="..\Crimson.Math\Crimson.Math.csproj" />
-      <ProjectReference Include="..\Crimson.Graphics.SDLShaderCross.Native\Crimson.Graphics.SDLShaderCross.Native.csproj" />
     </ItemGroup>
 
     <ItemGroup>
       <PackageReference Include="FreeTypeSharp" Version="3.0.1" />
       <PackageReference Include="Hexa.NET.ImGui" Version="2.2.7" />
-      <PackageReference Include="piko.SDL3" Version="0.0.3" />
-      <PackageReference Include="piko.SDL3.ShaderCross" Version="0.0.3" />
+      <PackageReference Include="piko.SDL3" Version="0.0.5" />
+      <PackageReference Include="piko.SDL3.ShaderCross" Version="0.0.5" />
       <PackageReference Include="SharpGLTF.Core" Version="1.0.5" />
       <PackageReference Include="StbImageSharp" Version="2.30.15" />
     </ItemGroup>

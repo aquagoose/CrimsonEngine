@@ -6,11 +6,11 @@ public static class MessageBox
 {
     public static void Show(Severity severity, string title, string message)
     {
-        uint flags = severity switch
+        SDL.MessageBoxFlags flags = severity switch
         {
-            Severity.Info => SDL.MessageboxInformation,
-            Severity.Warning => SDL.MessageboxWarning,
-            Severity.Error => SDL.MessageboxError,
+            Severity.Info => SDL.MessageBoxFlags.Information,
+            Severity.Warning => SDL.MessageBoxFlags.Warning,
+            Severity.Error => SDL.MessageBoxFlags.Error,
             _ => throw new ArgumentOutOfRangeException(nameof(severity), severity, null)
         };
         

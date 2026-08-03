@@ -11,7 +11,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="piko.SDL3" Version="0.0.3" />
+      <PackageReference Include="piko.SDL3" Version="0.0.5" />
     </ItemGroup>
 
 </Project>

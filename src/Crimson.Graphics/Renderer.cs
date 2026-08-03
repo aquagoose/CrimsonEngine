@@ -392,7 +392,8 @@ public static class Renderer
 
         MipmapQueue.Clear();
 
-        SDL.WaitAndAcquireGPUSwapchainTexture(cb, _window, out SDL.GPUTexture swapchainTexture, null, null)
+        SDL.GPUTexture swapchainTexture;
+        SDL.WaitAndAcquireGPUSwapchainTexture(cb, _window, &swapchainTexture, null, null)
             .Check("Acquire swapchain texture");
 
         if (swapchainTexture.IsNull)
