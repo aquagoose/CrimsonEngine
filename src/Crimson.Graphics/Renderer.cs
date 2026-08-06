@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using Crimson.Core;
+using Crimson.Graphics.Rendering;
 using Crimson.Graphics.SDLGPU;
 using piko.SDL3;
 
@@ -18,6 +19,11 @@ public static class Renderer
     private static SDL.Window _window;
 
     /// <summary>
+    /// The texture batcher for UI elements.
+    /// </summary>
+    private static TexturedQuadBatcher _uiBatcher = null!;
+
+    /// <summary>
     /// The <see cref="GPUContext"/> instance, holding an SDL3 GPU device.
     /// </summary>
     internal static GPUContext Context = null!;
@@ -31,10 +37,15 @@ public static class Renderer
     /// <param name="window">The <see cref="SDL.Window"/> to associate this renderer with.</param>
     public static void Init(SDL.Window window)
     {
-        Debug.Assert(Context == null, "Renderer has already been initialized!");
+        Debug.Assert(!IsInitialized, "Renderer has already been initialized!");
         _window = window;
         Context = new GPUContext(window);
         MipmapQueue = [];
+
+        SDL.GPUTextureFormat mainTargetFormat = SDL.GetGPUSwapchainTextureFormat(Context.Device, _window);
+
+        Logger.Trace("Creating UI batcher.");
+        _uiBatcher = new TexturedQuadBatcher(Context, mainTargetFormat);
     }
 
     /// <summary>
@@ -42,12 +53,10 @@ public static class Renderer
     /// </summary>
     public static void Free()
     {
-        Debug.Assert(Context != null, "Renderer has not been initialized!");
+        Debug.Assert(IsInitialized, "Renderer has not been initialized!");
         SDL.WaitForGPUIdle(Context.Device).Check("Wait for GPU idle");
 
-
-        // fancy dispose logic to go later
-
+        _uiBatcher.Dispose();
 
         Context.Dispose();
     }
@@ -57,6 +66,8 @@ public static class Renderer
     /// </summary>
     public static unsafe void Render()
     {
+        Debug.Assert(IsInitialized, "Renderer has not been initialized!");
+
         SDL.GPUCommandBuffer cb = SDL.AcquireGPUCommandBuffer(Context.Device).Check("Acquire command buffer");
 
         foreach (Texture texture in MipmapQueue)

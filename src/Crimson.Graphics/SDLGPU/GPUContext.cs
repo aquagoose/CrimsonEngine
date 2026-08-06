@@ -1,14 +1,18 @@
+using System.Diagnostics;
+using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Crimson.Core;
 using Crimson.Math;
 using piko.SDL3;
+using piko.SDL3.ShaderCross;
 
 namespace Crimson.Graphics.SDLGPU;
 
 /// <summary>
 /// A small wrapper around an SDL GPU device, providing useful utilities, and can be passed around as an instance.
 /// </summary>
-internal class GPUContext : IDisposable
+internal unsafe class GPUContext : IDisposable
 {
     /// <summary>
     /// 32MiB initial transfer buffer size.
@@ -37,11 +41,7 @@ internal class GPUContext : IDisposable
 
         // enable d3d12 on windows
         if (OperatingSystem.IsWindows())
-        {
-            // todo do we still want dxbc?
-            SDL.SetBooleanProperty(props, SDL.Prop.GpuDeviceCreateShadersDxbcBoolean, 1);
             SDL.SetBooleanProperty(props, SDL.Prop.GpuDeviceCreateShadersDxilBoolean, 1);
-        }
 
 #if DEBUG
         SDL.SetBooleanProperty(props, SDL.Prop.GpuDeviceCreateDebugmodeBoolean, 1);
@@ -53,6 +53,9 @@ internal class GPUContext : IDisposable
 
         Logger.Trace("Claiming window for device.");
         SDL.ClaimWindowForGPUDevice(Device, _window).Check("Claim window for device");
+
+        Logger.Trace("Initializing ShaderCross");
+        SDLShaderCross.Init();
 
         uint deviceProps = SDL.GetGPUDeviceProperties(Device);
         Logger.Info($"Backend: {SDL.GetGPUDeviceDriver(Device)}");
@@ -159,7 +162,7 @@ internal class GPUContext : IDisposable
     /// <summary>
     /// Create an empty buffer.
     /// </summary>
-    public unsafe SDL.GPUBuffer CreateBuffer(SDL.GPUBufferUsageFlags usage, uint size)
+    public SDL.GPUBuffer CreateBuffer(SDL.GPUBufferUsageFlags usage, uint size)
     {
         SDL.GPUBufferCreateInfo bufferInfo = new()
         {
@@ -171,10 +174,85 @@ internal class GPUContext : IDisposable
         return SDL.CreateGPUBuffer(Device, &bufferInfo).Check("Create buffer");
     }
 
+    public SDL.GPUShader CreateShader(SDLShaderCross.ShaderStage stage, string name, string entryPoint)
+    {
+        Assembly assembly = Assembly.GetExecutingAssembly();
+
+        SDL.GPUShaderFormat format = SDL.GetGPUShaderFormats(Device);
+        // ensure format only contains a single shader format instead of flags
+        if ((format & SDL.GPUShaderFormat.Spirv) != 0)
+            format = SDL.GPUShaderFormat.Spirv;
+        if ((format & SDL.GPUShaderFormat.Msl) != 0)
+            format = SDL.GPUShaderFormat.Msl;
+        if ((format & SDL.GPUShaderFormat.Dxil) != 0)
+            format = SDL.GPUShaderFormat.Dxil;
+
+        string fullPath = $"Crimson.Graphics.Shaders.{name.Replace('/', '.')}.hlsl";
+        Logger.Trace($"Loading shader \"{fullPath}\" (format: {format})");
+
+        // get the resource, and then load it to a native buffer.
+        // we're using a native buffer as the entire process is unmanaged,
+        // so it doesn't make sense to add extra GC pressure here.
+        using Stream? stream = assembly.GetManifestResourceStream(fullPath);
+        Debug.Assert(stream != null);
+        byte* pHlsl = (byte*) NativeMemory.Alloc((nuint) (stream.Length * sizeof(byte)));
+        Span<byte> hlslSpan = new Span<byte>(pHlsl, (int) stream.Length);
+        stream.ReadExactly(hlslSpan);
+
+        sbyte* pEntryPoint = (sbyte*) Marshal.StringToHGlobalAnsi(entryPoint);
+
+        SDLShaderCross.HLSLInfo hlslInfo = new()
+        {
+            ShaderStage = stage,
+            Source = (sbyte*) pHlsl,
+            Entrypoint = pEntryPoint,
+            // todo IncludeDir =
+        };
+
+        nuint spirvSize;
+        byte* spirv;
+
+        try
+        {
+            spirv = (byte*) SDLShaderCross.CompileSPIRVFromHLSL(&hlslInfo, &spirvSize);
+            if (spirv == null)
+                throw new Exception($"Failed to compile HLSL: {SDL.GetError()}");
+        }
+        finally
+        {
+            NativeMemory.Free(pHlsl);
+        }
+
+        SDLShaderCross.SPIRVInfo spirvInfo = new()
+        {
+            ShaderStage = stage,
+            Bytecode = spirv,
+            BytecodeSize = spirvSize,
+            Entrypoint = pEntryPoint
+        };
+
+        SDL.GPUShader shader;
+        try
+        {
+            SDLShaderCross.GraphicsShaderMetadata* metadata = SDLShaderCross.ReflectGraphicsSPIRV(spirv, spirvSize, 0);
+            if (metadata == null)
+                throw new Exception($"Failed to reflect SPIRV: {SDL.GetError()}");
+            shader = SDLShaderCross.CompileGraphicsShaderFromSPIRV(Device, &spirvInfo, &metadata->ResourceInfo, 0)
+                .Check("Create shader");
+            NativeMemory.Free(metadata);
+        }
+        finally
+        {
+            Marshal.FreeHGlobal((nint) pEntryPoint);
+        }
+
+        return shader;
+    }
+
     /// <summary>
     /// Create a transfer buffer.
     /// </summary>
-    private unsafe SDL.GPUTransferBuffer CreateTransferBuffer(SDL.GPUTransferBufferUsage usage, uint size)
+    private SDL.GPUTransferBuffer CreateTransferBuffer(SDL.GPUTransferBufferUsage usage, uint size)
     {
         SDL.GPUTransferBufferCreateInfo transferBufferInfo = new()
         {
@@ -190,6 +268,7 @@ internal class GPUContext : IDisposable
     {
         SDL.ReleaseGPUTransferBuffer(Device, _transferBuffer);
 
+        SDLShaderCross.Quit();
         SDL.ReleaseWindowFromGPUDevice(Device, _window);
         SDL.DestroyGPUDevice(Device);
     }

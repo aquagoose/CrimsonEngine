@@ -12,20 +12,20 @@ struct VSOutput
     float4 Tint:     COLOR0;
 };
 
-struct TransformMatrices
+cbuffer TransformMatrices : register(b0, space1)
 {
     float4x4 Projection;
     float4x4 Transform;
-};
+}
 
-ParameterBlock<TransformMatrices> Camera;
-ParameterBlock<Sampler2D> Sprite;
+Texture2D Sprite : register(t0, space2);
+SamplerState Sampler : register(s0, space2);
 
 VSOutput VSMain(const in VSInput input)
 {
     VSOutput output;
 
-    output.Position = mul(Camera.Projection, mul(Camera.Transform, float4(input.Position, 0.0, 1.0)));
+    output.Position = mul(Projection, mul(Transform, float4(input.Position, 0.0, 1.0)));
     output.TexCoord = input.TexCoord;
     output.Tint = input.Tint;
 
@@ -34,5 +34,5 @@ VSOutput VSMain(const in VSInput input)
 
 float4 PSMain(const in VSOutput input): SV_Target0
 {
-    return Sprite.Sample(input.TexCoord);
+    return Sprite.Sample(Sampler, input.TexCoord);
 }

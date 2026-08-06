@@ -1,10 +1,18 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-  <ItemGroup>
-    <PackageReference Include="piko.SDL3" Version="0.0.5" />
-    <PackageReference Include="StbImageSharp" Version="2.30.15" />
-  </ItemGroup>
-  <ItemGroup>
-    <ProjectReference Include="..\Crimson.Core\Crimson.Core.csproj" />
-    <ProjectReference Include="..\Crimson.Math\Crimson.Math.csproj" />
-  </ItemGroup>
+    <ItemGroup>
+        <PackageReference Include="piko.SDL3" Version="0.0.5" />
+        <PackageReference Include="piko.SDL3.ShaderCross" Version="0.0.5" />
+        <PackageReference Include="StbImageSharp" Version="2.30.15" />
+    </ItemGroup>
+    
+    <ItemGroup>
+        <ProjectReference Include="..\Crimson.Core\Crimson.Core.csproj" />
+        <ProjectReference Include="..\Crimson.Math\Crimson.Math.csproj" />
+    </ItemGroup>
+  
+    <ItemGroup>
+        <EmbeddedResource Include="Shaders/**/*.hlsl" />
+        <EmbeddedResource Include="Shaders/**/*.hlsli" />
+    </ItemGroup>
+    
 </Project>

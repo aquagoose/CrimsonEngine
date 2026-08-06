@@ -41,4 +41,19 @@ internal static class SDLUtils
             _ => throw new ArgumentOutOfRangeException(nameof(format), format, null)
         };
     }
+
+    extension(SDL.GPUColorTargetBlendState)
+    {
+        public static SDL.GPUColorTargetBlendState NonPremultiplied => new()
+        {
+            EnableBlend = true,
+            SrcColorBlendfactor = SDL.GPUBlendFactor.SrcAlpha,
+            DstColorBlendfactor = SDL.GPUBlendFactor.OneMinusSrcAlpha,
+            ColorBlendOp = SDL.GPUBlendOp.Add,
+            SrcAlphaBlendfactor = SDL.GPUBlendFactor.SrcAlpha,
+            DstAlphaBlendfactor = SDL.GPUBlendFactor.OneMinusSrcAlpha,
+            AlphaBlendOp = SDL.GPUBlendOp.Add,
+            EnableColorWriteMask = false
+        };
+    }
 }
