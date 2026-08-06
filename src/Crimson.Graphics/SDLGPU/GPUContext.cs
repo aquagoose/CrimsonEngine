@@ -111,6 +111,10 @@ internal unsafe class GPUContext : IDisposable
     {
         uint dataSize = (uint) data.Length;
 
+        uint expectedDataSize = format.BytesPerPixel * size.Width * size.Height;
+        Debug.Assert(dataSize == expectedDataSize,
+            $"The data size ({dataSize} bytes) does not match the expected data size ({expectedDataSize} bytes).");
+
         SDL.GPUTransferBuffer transferBuffer = GetTransferBuffer(dataSize, out uint offset, out bool cycle);
 
         Logger.Trace($"Copying {dataSize/1024}KiB of data to texture {texture.Handle} (offset: {offset}, cycle: {cycle})");
@@ -188,7 +192,7 @@ internal unsafe class GPUContext : IDisposable
             format = SDL.GPUShaderFormat.Dxil;
 
         string fullPath = $"Crimson.Graphics.Shaders.{name.Replace('/', '.')}.hlsl";
-        Logger.Trace($"Loading shader \"{fullPath}\" (format: {format})");
+        Logger.Trace($"Loading shader \"{fullPath}\" (stage: {stage}, entry: {entryPoint}, format: {format})");
 
         // get the resource, and then load it to a native buffer.
         // we're using a native buffer as the entire process is unmanaged,
