@@ -1,4 +1,5 @@
 ﻿using Crimson.Core;
+using Crimson.Math;
 using piko.SDL3;
 
 namespace Crimson.Graphics.Tests.Common;
@@ -37,6 +38,11 @@ public abstract class TestBase(string name) : IDisposable
                     case SDL.EventType.Quit:
                     case SDL.EventType.WindowCloseRequested:
                         alive = false;
+                        break;
+                    case SDL.EventType.WindowResized:
+                        int w, h;
+                        SDL.GetWindowSizeInPixels(_window, &w, &h);
+                        Renderer.Resize(new Size<uint>((uint) w, (uint) h));
                         break;
                 }
             }

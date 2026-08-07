@@ -20,6 +20,7 @@ public static class Renderer
     public static bool IsInitialized => Context != null;
 
     private static SDL.Window _window;
+    private static Size<uint> _renderSize;
 
     /// <summary>
     /// The texture batcher for UI elements.
@@ -35,15 +36,24 @@ public static class Renderer
     internal static HashSet<Texture> MipmapQueue = null!;
 
     /// <summary>
+    /// Gets the render size in pixels.
+    /// </summary>
+    public static Size<uint> Size => _renderSize;
+
+    /// <summary>
     /// Initialize the renderer.
     /// </summary>
     /// <param name="window">The <see cref="SDL.Window"/> to associate this renderer with.</param>
-    public static void Init(SDL.Window window)
+    public static unsafe void Init(SDL.Window window)
     {
         Debug.Assert(!IsInitialized, "Renderer has already been initialized!");
         _window = window;
         Context = new GPUContext(window);
         MipmapQueue = [];
+
+        int w, h;
+        SDL.GetWindowSizeInPixels(_window, &w, &h);
+        _renderSize = new Size<uint>((uint) w, (uint) h);
 
         SDL.GPUTextureFormat mainTargetFormat = SDL.GetGPUSwapchainTextureFormat(Context.Device, _window);
 
@@ -116,10 +126,19 @@ public static class Renderer
 
         bool hasCleared = false;
 
-        Matrix4x4 projection = Matrix4x4.CreateOrthographicOffCenter(0, 1280, 720, 0, -1, 1);
+        Matrix4x4 projection = Matrix4x4.CreateOrthographicOffCenter(0, _renderSize.Width, _renderSize.Height, 0, -1, 1);
         Matrix4x4 transform = Matrix4x4.Identity;
         _uiBatcher.Render(cb, swapchainTexture, new SpriteBatcher.TransformMatrices(projection, transform), !hasCleared);
 
         SDL.SubmitGPUCommandBuffer(cb).Check("Submit command buffer");
+    }
+
+    /// <summary>
+    /// Resize the renderer.
+    /// </summary>
+    /// <param name="newSize">The new size, in pixels, to resize to.</param>
+    public static void Resize(Size<uint> newSize)
+    {
+        _renderSize = newSize;
     }
 }
