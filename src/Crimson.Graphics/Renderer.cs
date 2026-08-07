@@ -21,7 +21,7 @@ public static class Renderer
     /// <summary>
     /// The texture batcher for UI elements.
     /// </summary>
-    private static TexturedQuadBatcher _uiBatcher = null!;
+    private static SpriteBatcher _uiBatcher = null!;
 
     /// <summary>
     /// The <see cref="GPUContext"/> instance, holding an SDL3 GPU device.
@@ -45,7 +45,7 @@ public static class Renderer
         SDL.GPUTextureFormat mainTargetFormat = SDL.GetGPUSwapchainTextureFormat(Context.Device, _window);
 
         Logger.Trace("Creating UI batcher.");
-        _uiBatcher = new TexturedQuadBatcher(Context, mainTargetFormat);
+        _uiBatcher = new SpriteBatcher(Context, mainTargetFormat);
     }
 
     /// <summary>

@@ -6,22 +6,22 @@ using piko.SDL3.ShaderCross;
 namespace Crimson.Graphics.Rendering;
 
 /// <summary>
-/// Batches 2D textured quads together.
+/// Batches sprites together.
 /// </summary>
-internal unsafe class TexturedQuadBatcher : IDisposable
+internal unsafe class SpriteBatcher : IDisposable
 {
     /// <summary>
-    /// The initial number of quads the batch can support, before expansion.
+    /// The initial number of sprites the batch can support, before expansion.
     /// </summary>
     private const uint InitialBatchSize = 4096;
 
     /// <summary>
-    /// The number of vertices per quad.
+    /// The number of vertices per sprite.
     /// </summary>
     private const uint NumVertices = 4;
 
     /// <summary>
-    /// The number of indices per quad.
+    /// The number of indices per sprite.
     /// </summary>
     private const uint NumIndices = 6;
 
@@ -37,7 +37,7 @@ internal unsafe class TexturedQuadBatcher : IDisposable
 
     private readonly SDL.GPUGraphicsPipeline _pipeline;
 
-    public TexturedQuadBatcher(GPUContext context, SDL.GPUTextureFormat targetFormat)
+    public SpriteBatcher(GPUContext context, SDL.GPUTextureFormat targetFormat)
     {
         _context = context;
 
@@ -47,8 +47,8 @@ internal unsafe class TexturedQuadBatcher : IDisposable
         _vertexBuffer = _context.CreateBuffer(SDL.GPUBufferUsageFlags.Vertex, (uint) (_vertices.Length * sizeof(Vertex)));
         _indexBuffer = _context.CreateBuffer(SDL.GPUBufferUsageFlags.Index, (uint) (_indices.Length * sizeof(uint)));
 
-        SDL.GPUShader vShader = _context.CreateShader(SDLShaderCross.ShaderStage.Vertex, "Texture", "VSMain");
-        SDL.GPUShader pShader = _context.CreateShader(SDLShaderCross.ShaderStage.Fragment, "Texture", "PSMain");
+        SDL.GPUShader vShader = _context.CreateShader(SDLShaderCross.ShaderStage.Vertex, "SpriteBatcher", "VSMain");
+        SDL.GPUShader pShader = _context.CreateShader(SDLShaderCross.ShaderStage.Fragment, "SpriteBatcher", "PSMain");
 
         SDL.GPUColorTargetDescription targetDesc = new()
         {

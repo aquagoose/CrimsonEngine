@@ -93,6 +93,8 @@ internal unsafe class GPUContext : IDisposable
             _transferBuffer = CreateTransferBuffer(SDL.GPUTransferBufferUsage.Upload, _transferBufferSize);
         }
 
+        // if we need to reset the current offset back to the start, then always cycle the buffer
+        // to ensure we aren't overwriting data that may be in use
         cycle = false;
         if (_transferBufferOffset + dataSize >= _transferBufferSize)
         {
@@ -117,6 +119,7 @@ internal unsafe class GPUContext : IDisposable
 
         SDL.GPUTransferBuffer transferBuffer = GetTransferBuffer(dataSize, out uint offset, out bool cycle);
 
+        // todo: maybe GetTransferBuffer could map it and return the mapped ptr instead of the buffer?
         Logger.Trace($"Copying {dataSize/1024}KiB of data to texture {texture.Handle} (offset: {offset}, cycle: {cycle})");
         void* mapped = SDL.MapGPUTransferBuffer(Device, transferBuffer, (byte) (cycle ? 1 : 0));
         if (mapped == null)
