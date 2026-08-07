@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Numerics;
 using Crimson.Core;
 using Crimson.Graphics.Rendering;
 using Crimson.Graphics.SDLGPU;
@@ -61,6 +62,18 @@ public static class Renderer
         Context.Dispose();
     }
 
+    public static void DrawImage(Texture texture, Vector2 position)
+    {
+        _uiBatcher.Draw(new SpriteBatcher.Sprite(
+            texture: texture,
+            topLeft: position,
+            topRight: new Vector2(position.X + texture.Size.Width, position.Y),
+            bottomLeft: new Vector2(position.X, position.Y + texture.Size.Height),
+            bottomRight: new Vector2(position.X + texture.Size.Width, position.Y + texture.Size.Height),
+            tint: Color.White
+        ));
+    }
+
     /// <summary>
     /// Render everything to the window.
     /// </summary>
@@ -90,16 +103,11 @@ public static class Renderer
             return;
         }
 
-        SDL.GPUColorTargetInfo targetInfo = new()
-        {
-            Texture = swapchainTexture,
-            ClearColor = new SDL.FColor(1.0f, 0.5f, 0.25f, 1.0f),
-            LoadOp = SDL.GPULoadOp.Clear,
-            StoreOp = SDL.GPUStoreOp.Store
-        };
+        bool hasCleared = false;
 
-        SDL.GPURenderPass pass = SDL.BeginGPURenderPass(cb, &targetInfo, 1, null).Check("Begin render pass");
-        SDL.EndGPURenderPass(pass);
+        Matrix4x4 projection = Matrix4x4.CreateOrthographicOffCenter(0, 1280, 720, 0, -1, 1);
+        Matrix4x4 transform = Matrix4x4.Identity;
+        _uiBatcher.Render(cb, swapchainTexture, new SpriteBatcher.TransformMatrices(projection, transform), !hasCleared);
 
         SDL.SubmitGPUCommandBuffer(cb).Check("Submit command buffer");
     }
