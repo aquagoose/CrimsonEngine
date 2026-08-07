@@ -25,9 +25,10 @@ internal class HelloWorldTest() : TestBase("Hello World Test")
             _value -= float.Pi * 2;
 
         for (int i = 0; i < 10; i++)
-        {
             Renderer.DrawImage(_texture, new Vector2(i * 20 + float.Sin(_value + i) * 200, i * 50));
-        }
+        
+        for (int i = 0; i < 10; i++)
+            Renderer.DrawImage(Texture.Debug, new Vector2(500 + i * 20 + float.Sin(-_value + i) * 200, i * 50));
     }
 
     public override void Dispose()

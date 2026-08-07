@@ -113,4 +113,19 @@ public class Texture : IDisposable
 
         SDL.ReleaseGPUTexture(_context.Device, Handle);
     }
+
+    /// <summary>
+    /// Gets a 1x1 white texture.
+    /// </summary>
+    public static Texture White { get; internal set; }
+
+    /// <summary>
+    /// Gets a 1x1 black texture.
+    /// </summary>
+    public static Texture Black { get; internal set; }
+
+    /// <summary>
+    /// Gets the debug texture.
+    /// </summary>
+    public static Texture Debug { get; internal set; }
 }

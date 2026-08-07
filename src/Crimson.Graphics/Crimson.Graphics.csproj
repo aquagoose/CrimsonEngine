@@ -13,6 +13,8 @@
     <ItemGroup>
         <EmbeddedResource Include="Shaders/**/*.hlsl" />
         <EmbeddedResource Include="Shaders/**/*.hlsli" />
+        <None Remove="DEBUG.png" />
+        <EmbeddedResource Include="DEBUG.png" />
     </ItemGroup>
     
 </Project>

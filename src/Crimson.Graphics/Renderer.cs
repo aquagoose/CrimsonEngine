@@ -1,8 +1,10 @@
 ﻿using System.Diagnostics;
 using System.Numerics;
+using System.Reflection;
 using Crimson.Core;
 using Crimson.Graphics.Rendering;
 using Crimson.Graphics.SDLGPU;
+using Crimson.Math;
 using piko.SDL3;
 
 namespace Crimson.Graphics;
@@ -45,6 +47,11 @@ public static class Renderer
 
         SDL.GPUTextureFormat mainTargetFormat = SDL.GetGPUSwapchainTextureFormat(Context.Device, _window);
 
+        Logger.Trace("Creating built-in textures.");
+        Texture.White = new Texture([255, 255, 255, 255], new Size<uint>(1), PixelFormat.RGBA8, false);
+        Texture.Black = new Texture([0, 0, 0, 255], new Size<uint>(1), PixelFormat.RGBA8, false);
+        Texture.Debug = new Texture(new Bitmap(Resource.Load("Crimson.Graphics.DEBUG.png", Assembly.GetExecutingAssembly())));
+
         Logger.Trace("Creating UI batcher.");
         _uiBatcher = new SpriteBatcher(Context, mainTargetFormat);
     }
@@ -58,6 +65,10 @@ public static class Renderer
         SDL.WaitForGPUIdle(Context.Device).Check("Wait for GPU idle");
 
         _uiBatcher.Dispose();
+
+        Texture.Debug.Dispose();
+        Texture.Black.Dispose();
+        Texture.White.Dispose();
 
         Context.Dispose();
     }

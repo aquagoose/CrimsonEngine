@@ -36,4 +36,16 @@ public class Bitmap
         Size = new Size<uint>((uint) result.Width, (uint) result.Height);
         Format = PixelFormat.RGBA8; // stb_image always returns RGBA8 data (when specifying RGBA color components)
     }
+
+    /// <summary>
+    /// Load a bitmap from image data.
+    /// </summary>
+    /// <param name="data">The image data to load.</param>
+    public Bitmap(byte[] data)
+    {
+        ImageResult result = ImageResult.FromMemory(data, ColorComponents.RedGreenBlueAlpha);
+        Data = result.Data;
+        Size = new Size<uint>((uint) result.Width, (uint) result.Height);
+        Format = PixelFormat.RGBA8;
+    }
 }
