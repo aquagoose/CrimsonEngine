@@ -31,14 +31,9 @@ internal unsafe class SpriteBatcher : IDisposable
 
     private readonly GPUContext _context;
 
-    // dynamically resizing vertex and index lists
-    private Vertex[] _vertices;
-    private uint[] _indices;
+    private uint _maxSprites;
+    private List<Sprite> _sprites;
     private List<Batch> _batches;
-
-    private Texture? _currentTexture;
-    private uint _drawCountSinceNewTexture;
-    private uint _totalDraws;
 
     // dynamic resizing vertex and index buffers
     private SDL.GPUBuffer _vertexBuffer;
@@ -52,13 +47,13 @@ internal unsafe class SpriteBatcher : IDisposable
     public SpriteBatcher(GPUContext context, SDL.GPUTextureFormat targetFormat)
     {
         _context = context;
+        _sprites = [];
         _batches = [];
 
-        _vertices = new Vertex[InitialBatchSize * NumVertices];
-        _indices = new uint[InitialBatchSize * NumIndices];
+        _maxSprites = InitialBatchSize;
 
-        _vertexBuffer = _context.CreateBuffer(SDL.GPUBufferUsageFlags.Vertex, (uint) (_vertices.Length * sizeof(Vertex)));
-        _indexBuffer = _context.CreateBuffer(SDL.GPUBufferUsageFlags.Index, (uint) (_indices.Length * sizeof(uint)));
+        _vertexBuffer = _context.CreateBuffer(SDL.GPUBufferUsageFlags.Vertex, (uint) (InitialBatchSize * NumVertices * sizeof(Vertex)));
+        _indexBuffer = _context.CreateBuffer(SDL.GPUBufferUsageFlags.Index, InitialBatchSize * NumIndices * sizeof(uint));
 
         SDL.GPUShader vShader = _context.CreateShader(SDLShaderCross.ShaderStage.Vertex, "SpriteBatcher", "VSMain");
         SDL.GPUShader pShader = _context.CreateShader(SDLShaderCross.ShaderStage.Fragment, "SpriteBatcher", "PSMain");
@@ -158,61 +153,90 @@ internal unsafe class SpriteBatcher : IDisposable
 
     public void Draw(in Sprite sprite)
     {
-        if (_currentTexture != sprite.Texture && _currentTexture != null)
-        {
-            _batches.Add(new Batch(_currentTexture, _drawCountSinceNewTexture,
-                _totalDraws - _drawCountSinceNewTexture));
-
-            _drawCountSinceNewTexture = _totalDraws;
-        }
-
-        _currentTexture = sprite.Texture;
-
-        uint vOffset = _totalDraws * NumVertices;
-        uint iOffset = _totalDraws * NumIndices;
-
-        _vertices[vOffset + 0] = new Vertex(sprite.TopLeft, new Vector2(0, 0), sprite.Tint);
-        _vertices[vOffset + 1] = new Vertex(sprite.TopRight, new Vector2(1, 0), sprite.Tint);
-        _vertices[vOffset + 2] = new Vertex(sprite.BottomRight, new Vector2(1, 1), sprite.Tint);
-        _vertices[vOffset + 3] = new Vertex(sprite.BottomLeft, new Vector2(0, 1), sprite.Tint);
-
-        _indices[iOffset + 0] = 0 + vOffset;
-        _indices[iOffset + 1] = 1 + vOffset;
-        _indices[iOffset + 2] = 3 + vOffset;
-        _indices[iOffset + 3] = 1 + vOffset;
-        _indices[iOffset + 4] = 2 + vOffset;
-        _indices[iOffset + 5] = 3 + vOffset;
-
-        _totalDraws++;
+        _sprites.Add(sprite);
     }
 
     public bool Render(SDL.GPUCommandBuffer cb, SDL.GPUTexture colorTarget, TransformMatrices matrices, bool needsClear)
     {
+        uint numSprites = (uint) _sprites.Count;
+
         // just don't even bother
-        if (_totalDraws == 0)
+        if (numSprites == 0)
             return false;
 
-        // add the last batch manually
-        Debug.Assert(_currentTexture != null);
-        _batches.Add(new Batch(_currentTexture, _drawCountSinceNewTexture, _totalDraws - _drawCountSinceNewTexture));
+        // resize the buffers if needed
+        if (numSprites > _maxSprites)
+        {
+            Logger.Debug($"The number of sprites ({numSprites}) exceeds the maximum the batcher can support ({_maxSprites})! The buffers will be resized.");
+            _maxSprites = BitUtils.RoundToNextPowerOf2(numSprites);
 
-        SDL.PushGPUVertexUniformData(cb, 0, &matrices, (uint) sizeof(TransformMatrices));
+            SDL.ReleaseGPUBuffer(_context.Device, _vertexBuffer);
+            SDL.ReleaseGPUBuffer(_context.Device, _indexBuffer);
 
-        uint verticesSize = _totalDraws * NumVertices * (uint) sizeof(Vertex);
-        uint indicesSize = _totalDraws * NumIndices * sizeof(uint);
+            _vertexBuffer = _context.CreateBuffer(SDL.GPUBufferUsageFlags.Vertex, (uint) (_maxSprites * NumVertices * sizeof(Vertex)));
+            _indexBuffer = _context.CreateBuffer(SDL.GPUBufferUsageFlags.Index, _maxSprites * NumIndices * sizeof(uint));
+        }
+
+        #region Add sprites to batch
+
+        uint verticesSize = numSprites * NumVertices * (uint) sizeof(Vertex);
+        uint indicesSize = numSprites * NumIndices * sizeof(uint);
         uint totalUploadSize = verticesSize + indicesSize;
 
+        // we're writing directly to the transfer buffer itself, so map it before we do anything
         SDL.GPUTransferBuffer transBuf = _context.GetTransferBuffer(totalUploadSize, out uint offset, out bool cycle);
         void* mapped = SDL.MapGPUTransferBuffer(_context.Device, transBuf, (byte) (cycle ? 1 : 0));
         if (mapped == null)
             throw new Exception($"Failed to map buffer: {SDL.GetError()}");
 
-        fixed (Vertex* pVertices = _vertices)
-            Unsafe.CopyBlock((byte*) mapped + offset, pVertices, verticesSize);
-        fixed (uint* pIndices = _indices)
-            Unsafe.CopyBlock((byte*) mapped + offset + verticesSize, pIndices, indicesSize);
+        // for our convenience...
+        Vertex* vertices = (Vertex*) ((byte*) mapped + offset);
+        uint* indices = (uint*) ((byte*) mapped + offset + verticesSize);
+
+        Texture? currentTexture = null;
+        uint currentSpriteCount = 0;
+        uint spriteCountAtLastTextureChange = 0;
+        foreach (Sprite sprite in _sprites)
+        {
+            // on texture change, add the batch to the batches so it can be batched by the batcher
+            if (currentTexture != sprite.Texture && currentTexture != null)
+            {
+                _batches.Add(new Batch(currentTexture, spriteCountAtLastTextureChange,
+                    currentSpriteCount - spriteCountAtLastTextureChange));
+
+                spriteCountAtLastTextureChange = currentSpriteCount;
+            }
+
+            currentTexture = sprite.Texture;
+
+            uint vOffset = currentSpriteCount * NumVertices;
+            uint iOffset = currentSpriteCount * NumIndices;
+
+            vertices[vOffset + 0] = new Vertex(sprite.TopLeft, new Vector2(0, 0), sprite.Tint);
+            vertices[vOffset + 1] = new Vertex(sprite.TopRight, new Vector2(1, 0), sprite.Tint);
+            vertices[vOffset + 2] = new Vertex(sprite.BottomRight, new Vector2(1, 1), sprite.Tint);
+            vertices[vOffset + 3] = new Vertex(sprite.BottomLeft, new Vector2(0, 1), sprite.Tint);
+
+            indices[iOffset + 0] = 0 + vOffset;
+            indices[iOffset + 1] = 1 + vOffset;
+            indices[iOffset + 2] = 3 + vOffset;
+            indices[iOffset + 3] = 1 + vOffset;
+            indices[iOffset + 4] = 2 + vOffset;
+            indices[iOffset + 5] = 3 + vOffset;
+
+            currentSpriteCount++;
+        }
+
+        // manually add the last batch
+        Debug.Assert(currentTexture != null);
+        _batches.Add(new Batch(currentTexture, spriteCountAtLastTextureChange,
+            currentSpriteCount - spriteCountAtLastTextureChange));
 
         SDL.UnmapGPUTransferBuffer(_context.Device, transBuf);
+
+        #endregion
+
+        #region Copy Pass
 
         SDL.GPUTransferBufferLocation src = new()
         {
@@ -240,6 +264,12 @@ internal unsafe class SpriteBatcher : IDisposable
         SDL.UploadToGPUBuffer(copyPass, &src, &idxDest, 0);
 
         SDL.EndGPUCopyPass(copyPass);
+
+        #endregion
+
+        SDL.PushGPUVertexUniformData(cb, 0, &matrices, (uint) sizeof(TransformMatrices));
+
+        #region Render pass
 
         SDL.GPUColorTargetInfo targetInfo = new()
         {
@@ -277,6 +307,7 @@ internal unsafe class SpriteBatcher : IDisposable
             };
             SDL.BindGPUFragmentSamplers(renderPass, 0, &textureBinding, 1);
 
+            // to prevent rebinding of the vertex buffers, we draw with an offset into the index buffer.
             uint iOffset = batch.SpriteOffset * NumIndices;
             uint numIndices = batch.NumSprites * NumIndices;
             SDL.DrawGPUIndexedPrimitives(renderPass, numIndices, 1, iOffset, 0, 0);
@@ -284,10 +315,10 @@ internal unsafe class SpriteBatcher : IDisposable
 
         SDL.EndGPURenderPass(renderPass);
 
+        #endregion
+
         // reset state
-        _currentTexture = null;
-        _totalDraws = 0;
-        _drawCountSinceNewTexture = 0;
+        _sprites.Clear();
         _batches.Clear();
 
         return true;
