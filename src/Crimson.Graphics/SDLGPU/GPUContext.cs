@@ -108,6 +108,49 @@ internal unsafe class GPUContext : IDisposable
         return _transferBuffer;
     }
 
+    public void CopyDataToBuffer<T>(SDL.GPUCommandBuffer cb, SDL.GPUBuffer buffer, uint offset, ReadOnlySpan<T> data) where T : unmanaged
+    {
+        uint dataSize = (uint) (data.Length * sizeof(T));
+
+        SDL.GPUTransferBuffer transferBuffer = GetTransferBuffer(dataSize, out uint bufferOffset, out bool cycle);
+
+        Logger.Trace($"Copying {dataSize/1024}KiB of data to buffer {buffer.Handle} (offset: {offset}, cycle: {cycle})");
+        void* mapped = SDL.MapGPUTransferBuffer(Device, transferBuffer, (byte) (cycle ? 1 : 0));
+        if (mapped == null)
+            throw new Exception($"Failed to map transfer buffer: {SDL.GetError()}");
+
+        fixed (void* pData = data)
+            Unsafe.CopyBlock((byte*) mapped + bufferOffset, pData, dataSize);
+
+        SDL.UnmapGPUTransferBuffer(Device, transferBuffer);
+
+        SDL.GPUCopyPass pass = SDL.BeginGPUCopyPass(cb).Check("Begin copy pass");
+
+        SDL.GPUTransferBufferLocation src = new()
+        {
+            TransferBuffer = transferBuffer,
+            Offset = bufferOffset
+        };
+
+        SDL.GPUBufferRegion dest = new()
+        {
+            Buffer = buffer,
+            Offset = offset,
+            Size = dataSize
+        };
+
+        SDL.UploadToGPUBuffer(pass, &src, &dest, 0);
+
+        SDL.EndGPUCopyPass(pass);
+    }
+
+    public void CopyDataToBuffer<T>(SDL.GPUBuffer buffer, uint offset, ReadOnlySpan<T> data) where T : unmanaged
+    {
+        SDL.GPUCommandBuffer cb = SDL.AcquireGPUCommandBuffer(Device).Check("Acquire command buffer");
+        CopyDataToBuffer(cb, buffer, offset, data);
+        SDL.SubmitGPUCommandBuffer(cb);
+    }
+
     public unsafe void CopyDataToTexture(SDL.GPUCommandBuffer cb, SDL.GPUTexture texture, uint x, uint y, Size<uint> size,
         PixelFormat format, ReadOnlySpan<byte> data)
     {
@@ -179,6 +222,13 @@ internal unsafe class GPUContext : IDisposable
 
         Logger.Trace($"Creating {size / 1024}KiB buffer. Usage flags: {usage}");
         return SDL.CreateGPUBuffer(Device, &bufferInfo).Check("Create buffer");
+    }
+
+    public SDL.GPUBuffer CreateBuffer<T>(SDL.GPUBufferUsageFlags usage, ReadOnlySpan<T> data) where T : unmanaged
+    {
+        SDL.GPUBuffer buffer = CreateBuffer(usage, (uint) (data.Length * sizeof(T)));
+        CopyDataToBuffer(buffer, 0, data);
+        return buffer;
     }
 
     public SDL.GPUShader CreateShader(SDLShaderCross.ShaderStage stage, string name, string entryPoint)
