@@ -244,40 +244,37 @@ internal unsafe class GPUContext : IDisposable
         if ((format & SDL.GPUShaderFormat.Dxil) != 0)
             format = SDL.GPUShaderFormat.Dxil;
 
-        string fullPath = $"Crimson.Graphics.Shaders.{name.Replace('/', '.')}.hlsl";
+        string includeDir = Path.Combine(AppContext.BaseDirectory, "Shaders");
+        string fullPath = Path.Combine(includeDir, $"{name}.hlsl");
         Logger.Trace($"Loading shader \"{fullPath}\" (stage: {stage}, entry: {entryPoint}, format: {format})");
 
-        // get the resource, and then load it to a native buffer.
-        // we're using a native buffer as the entire process is unmanaged,
-        // so it doesn't make sense to add extra GC pressure here.
-        using Stream? stream = assembly.GetManifestResourceStream(fullPath);
-        Debug.Assert(stream != null);
-        byte* pHlsl = (byte*) NativeMemory.Alloc((nuint) (stream.Length * sizeof(byte)));
-        Span<byte> hlslSpan = new Span<byte>(pHlsl, (int) stream.Length);
-        stream.ReadExactly(hlslSpan);
-
+        byte[] hlsl = File.ReadAllBytes(fullPath);
         sbyte* pEntryPoint = (sbyte*) Marshal.StringToHGlobalAnsi(entryPoint);
-
-        SDLShaderCross.HLSLInfo hlslInfo = new()
-        {
-            ShaderStage = stage,
-            Source = (sbyte*) pHlsl,
-            Entrypoint = pEntryPoint,
-            // todo IncludeDir =
-        };
+        sbyte* pIncludeDir = (sbyte*) Marshal.StringToHGlobalAnsi(includeDir);
 
         nuint spirvSize;
         byte* spirv;
 
-        try
+        fixed (byte* pHlsl = hlsl)
         {
-            spirv = (byte*) SDLShaderCross.CompileSPIRVFromHLSL(&hlslInfo, &spirvSize);
-            if (spirv == null)
-                throw new Exception($"Failed to compile HLSL: {SDL.GetError()}");
-        }
-        finally
-        {
-            NativeMemory.Free(pHlsl);
+            SDLShaderCross.HLSLInfo hlslInfo = new()
+            {
+                ShaderStage = stage,
+                Source = (sbyte*) pHlsl,
+                Entrypoint = pEntryPoint,
+                IncludeDir = pIncludeDir
+            };
+
+            try
+            {
+                spirv = (byte*) SDLShaderCross.CompileSPIRVFromHLSL(&hlslInfo, &spirvSize);
+                if (spirv == null)
+                    throw new Exception($"Failed to compile HLSL: {SDL.GetError()}");
+            }
+            finally
+            {
+                Marshal.FreeHGlobal((nint) pIncludeDir);
+            }
         }
 
         SDLShaderCross.SPIRVInfo spirvInfo = new()
