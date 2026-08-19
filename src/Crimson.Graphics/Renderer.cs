@@ -36,6 +36,11 @@ public static class Renderer
     internal static HashSet<Texture> MipmapQueue = null!;
 
     /// <summary>
+    /// Gets the target format for the 3D renderer.
+    /// </summary>
+    internal static SDL.GPUTextureFormat TargetFormat3D => SDL.GetGPUSwapchainTextureFormat(Context.Device, _window);
+
+    /// <summary>
     /// Gets the render size in pixels.
     /// </summary>
     public static Size<uint> Size => _renderSize;

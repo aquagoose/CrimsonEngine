@@ -4,6 +4,7 @@
   </Folder>
   <Folder Name="/tests/Graphics/">
     <File Path="tests\Graphics\HelloWorldTest.cs" />
+    <File Path="tests\Graphics\SimplePlaneTest.cs" />
     <Project Path="tests/Graphics/Crimson.Graphics.Tests.Common/Crimson.Graphics.Tests.Common.csproj" />
   </Folder>
   <Project Path="src/Crimson.Audio/Crimson.Audio.csproj" />
