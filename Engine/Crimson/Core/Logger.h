@@ -2,6 +2,22 @@
 
 #include <string>
 #include <source_location>
+#include <format>
+#include <stdexcept>
+
+#define CGE_LOG(severity, ...) {\
+    auto message = std::format(__VA_ARGS__);\
+    cge::Logger::Log(cge::Logger::Severity::severity, message);\
+    if (cge::Logger::Severity::severity == cge::Logger::Severity::Fatal) \
+        throw std::runtime_error(message);\
+}
+
+#define CGE_TRACE(...) CGE_LOG(Trace, __VA_ARGS__);
+#define CGE_DEBUG(...) CGE_LOG(Debug, __VA_ARGS__);
+#define CGE_INFO(...)  CGE_LOG(Info, __VA_ARGS__);
+#define CGE_WARN(...)  CGE_LOG(Warning, __VA_ARGS__);
+#define CGE_ERROR(...) CGE_LOG(Error, __VA_ARGS__);
+#define CGE_FATAL(...) CGE_LOG(Fatal, __VA_ARGS__);
 
 /**
  * Contains utility functions for logging.
