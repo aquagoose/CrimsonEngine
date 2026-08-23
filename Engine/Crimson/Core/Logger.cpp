@@ -44,6 +44,7 @@ namespace cge
 
         _ss << '(' << filePath << ':' << location.line() << ')' << ' ' << message;
 
+        // always output to stdout when debug is enabled.
 #ifndef NDEBUG
         std::cout << _ss.str() << std::endl;
 #endif

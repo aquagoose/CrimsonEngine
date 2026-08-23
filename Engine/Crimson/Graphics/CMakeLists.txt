@@ -1,0 +1,2 @@
+file(GLOB_RECURSE CGE_GRAPHICS_SRC CONFIGURE_DEPENDS *.h *.cpp)
+add_library(Crimson-Graphics STATIC ${CGE_GRAPHICS_SRC})
