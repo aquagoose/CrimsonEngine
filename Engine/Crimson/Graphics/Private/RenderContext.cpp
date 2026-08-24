@@ -12,13 +12,12 @@ namespace cge::Private
         SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_SHADERS_SPIRV_BOOLEAN, true);
 
         // use d3d12 on windows
-        // todo CGE_PLATFORM_WINDOWS
-#ifdef SDL_PLATFORM_WINDOWS
+#ifdef CGE_PLATFORM_WINDOWS
         SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_SHADERS_DXIL_BOOLEAN, true);
 #endif
 
         // use metal on apple platforms
-#ifdef SDL_PLATFORM_APPLE
+#ifdef CGE_PLATFORM_APPLE
         SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_SHADERS_MSL_BOOLEAN, true);
 #endif
 

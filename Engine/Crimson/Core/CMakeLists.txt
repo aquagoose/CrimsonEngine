@@ -1,3 +1,0 @@
-file(GLOB_RECURSE CGE_CORE_SRC CONFIGURE_DEPENDS *.h *.cpp)
-add_library(Crimson-Core STATIC ${CGE_CORE_SRC})
-target_include_directories(Crimson-Core PUBLIC ../)
