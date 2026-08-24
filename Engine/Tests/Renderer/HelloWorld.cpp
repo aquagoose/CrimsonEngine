@@ -26,9 +26,13 @@ int main(int argc, char* argv[])
                     break;
             }
         }
+
+        renderer->Render();
     }
 
     delete renderer;
+    SDL_DestroyWindow(window);
+    SDL_Quit();
 
     return 0;
 }

@@ -12,5 +12,7 @@ namespace cge
 
     public:
         explicit Renderer(SDL_Window* window);
+
+        void Render();
     };
 }
