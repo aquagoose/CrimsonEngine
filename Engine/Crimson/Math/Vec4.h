@@ -60,7 +60,7 @@ namespace cge
         }
 
         template<typename TOther>
-        Vec4<TOther> As()
+        Vec4<TOther> As() const
         {
             return {
                 static_cast<TOther>(X),
@@ -68,6 +68,16 @@ namespace cge
                 static_cast<TOther>(Z),
                 static_cast<TOther>(W),
             };
+        }
+
+        T LengthSquared() const
+        {
+            return Dot(*this, *this);
+        }
+
+        T Length() const
+        {
+            return std::sqrt(LengthSquared());
         }
 
         friend Vec4 operator +(const Vec4& lhs, const Vec4& rhs)
@@ -148,6 +158,14 @@ namespace cge
         static Vec4 UnitW()
         {
             return { 0, 0, 0, 1 };
+        }
+
+        static T Dot(const Vec4& a, const Vec4& b)
+        {
+            return a.X * b.X +
+                   a.Y * b.Y +
+                   a.X * b.Z +
+                   a.W * b.W;
         }
     };
 
