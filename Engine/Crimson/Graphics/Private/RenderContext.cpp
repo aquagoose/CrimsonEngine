@@ -1,7 +1,7 @@
 #include "RenderContext.h"
 #include "SDLUtils.h"
 
-#include <Core/Logger.h>
+#include "Core/Logger.h"
 
 namespace cge::Private
 {

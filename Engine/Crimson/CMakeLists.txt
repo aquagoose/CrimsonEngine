@@ -1,8 +1,11 @@
 option(CGE_SUBSYSTEM_GRAPHICS "Enable the graphics subsystem" ON)
 
+# core engine sources
 file(GLOB_RECURSE CGE_SRC CONFIGURE_DEPENDS
         Core/*.h
         Core/*.cpp
+        Math/*.h
+        Math/*.cpp
 )
 
 set(CGE_LIBS "")
