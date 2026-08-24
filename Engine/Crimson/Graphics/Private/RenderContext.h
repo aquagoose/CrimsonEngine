@@ -4,6 +4,9 @@
 
 namespace cge::Private
 {
+    /**
+     * The core renderer context, containing the core objects for the renderer.
+     */
     class RenderContext final
     {
     public:
