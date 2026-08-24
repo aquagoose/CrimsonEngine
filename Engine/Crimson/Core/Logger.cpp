@@ -15,8 +15,8 @@ namespace cge
         _ss.str("");
 
         auto now = std::chrono::system_clock::now();
-        auto time = std::format("{:%F %T}", std::chrono::floor<std::chrono::milliseconds>(now));
-        auto filePath = std::filesystem::path(location.file_name()).filename().c_str();
+        auto time = std::format("{:%F %T} ", std::chrono::floor<std::chrono::milliseconds>(now));
+        auto filePath = std::filesystem::path(location.file_name()).filename().string();
 
         _ss << time;
 
