@@ -3,6 +3,7 @@
 #include "Coredefs.h"
 
 #include <format>
+#include <cmath>
 
 namespace cge
 {
@@ -59,6 +60,11 @@ namespace cge
             W = 0;
         }
 
+        /**
+         * Cast the components of this Vec4 to another type.
+         * @tparam TOther The numeric type to cast to.
+         * @return A Vec4 with the component type cast to the given type.
+         */
         template<typename TOther>
         Vec4<TOther> As() const
         {
@@ -70,14 +76,28 @@ namespace cge
             };
         }
 
+        /**
+         * Calculate the squared length/magnitude of this Vec4.
+         */
         T LengthSquared() const
         {
             return Dot(*this, *this);
         }
 
+        /**
+         * Calculate the length/magnitude of this Vec4.
+         */
         T Length() const
         {
             return std::sqrt(LengthSquared());
+        }
+
+        /**
+         * Get the normalized value of this Vec4.
+         */
+        Vec4 Normalized() const
+        {
+            return *this / Length();
         }
 
         friend Vec4 operator +(const Vec4& lhs, const Vec4& rhs)
@@ -140,31 +160,48 @@ namespace cge
             };
         }
 
+        /**
+         * Get a Vec4 where the X component is 1, and all other components are 0.
+         */
         static Vec4 UnitX()
         {
             return { 1, 0, 0, 0 };
         }
 
+        /**
+         * Get a Vec4 where the Y component is 1, and all other components are 0.
+         */
         static Vec4 UnitY()
         {
             return { 0, 1, 0, 0 };
         }
 
+        /**
+         * Get a Vec4 where the Z component is 1, and all other components are 0.
+         */
         static Vec4 UnitZ()
         {
             return { 0, 0, 1, 0 };
         }
 
+        /**
+         * Get a Vec4 where the W component is 1, and all other components are 0.
+         */
         static Vec4 UnitW()
         {
             return { 0, 0, 0, 1 };
         }
 
+        /**
+         * Calculate the dot product of two Vec4s.
+         * @param a The first vector.
+         * @param b The second vector.
+         */
         static T Dot(const Vec4& a, const Vec4& b)
         {
             return a.X * b.X +
                    a.Y * b.Y +
-                   a.X * b.Z +
+                   a.Z * b.Z +
                    a.W * b.W;
         }
     };

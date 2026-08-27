@@ -1,7 +1,6 @@
-#include <Math/Vec4.h>
-#include <cassert>
+#include "UnitTestFramework.h"
 
-using namespace cge;
+#include <Math/Vec4.h>
 
 #define ASSERT_VEC4(vec, x, y, z, w) {\
     assert(vec.X == x);\
@@ -9,6 +8,8 @@ using namespace cge;
     assert(vec.Z == z);\
     assert(vec.W == w);\
 }
+
+using namespace cge;
 
 int main(int argc, char* argv[])
 {
@@ -101,6 +102,37 @@ int main(int argc, char* argv[])
     {
         Vec4i vec = Vec4i::UnitW();
         ASSERT_VEC4(vec, 0, 0, 0, 1);
+    }
+
+    // dot product
+    {
+        Vec4i a = { 1, 2, 3, 4 };
+        Vec4i b = { 5, 6, 7, 8 };
+        i32 c = Vec4i::Dot(a, b);
+        // https://www.calculatorsoup.com/calculators/algebra/dot-product-calculator.php
+        assert(c == 70);
+    }
+
+    // length squared
+    {
+        Vec4i vec = { 1, 2, 3, 4 };
+        i32 lengthSquared = vec.LengthSquared();
+        // https://calculator-online.net/vector-magnitude-calculator/
+        assert(lengthSquared == 30);
+    }
+
+    // length
+    {
+        Vec4f vec = { 1, 2, 3, 4 };
+        f32 length = vec.Length();
+        // https://calculator-online.net/vector-magnitude-calculator/
+        assert(APPROX_EQ(length, 5.47723));
+    }
+
+    {
+        Vec4f vec { 1, 2, 3, 4 };
+        Vec4f normalized = vec.Normalized();
+        
     }
 
     return 0;
