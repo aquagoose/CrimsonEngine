@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Coredefs.h"
+#include "Utils.h"
 
 #include <format>
 #include <cmath>
@@ -203,6 +204,23 @@ namespace cge
                    a.Y * b.Y +
                    a.Z * b.Z +
                    a.W * b.W;
+        }
+
+        /**
+         * Linearly interpolate between two Vec4 by the amount.
+         * @param from The Vec4 to interpolate from.
+         * @param to The Vec4 to interpolate to.
+         * @param amount The amount, between 0 and 1, to interpolate by.
+         * @return A Vec4 between from and to, interpolated by amount.
+         */
+        static Vec4 Lerp(const Vec4& from, const Vec4& to, T amount)
+        {
+            return {
+                CGE_LERP(from.X, to.X, amount),
+                CGE_LERP(from.Y, to.Y, amount),
+                CGE_LERP(from.Z, to.Z, amount),
+                CGE_LERP(from.W, to.W, amount)
+            };
         }
     };
 

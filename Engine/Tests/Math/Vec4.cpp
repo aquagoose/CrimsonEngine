@@ -9,6 +9,13 @@
     assert(vec.W == w);\
 }
 
+#define ASSERT_VEC4_APPROX(vec, x, y, z, w) {\
+    assert(APPROX_EQ(vec.X, x));\
+    assert(APPROX_EQ(vec.Y, y));\
+    assert(APPROX_EQ(vec.Z, z));\
+    assert(APPROX_EQ(vec.W, w));\
+}
+
 using namespace cge;
 
 int main(int argc, char* argv[])
@@ -123,16 +130,26 @@ int main(int argc, char* argv[])
 
     // length
     {
-        Vec4f vec = { 1, 2, 3, 4 };
-        f32 length = vec.Length();
+        Vec4d vec = { 1, 2, 3, 4 };
+        f64 length = vec.Length();
         // https://calculator-online.net/vector-magnitude-calculator/
         assert(APPROX_EQ(length, 5.47723));
     }
 
+    // normalization
     {
-        Vec4f vec { 1, 2, 3, 4 };
-        Vec4f normalized = vec.Normalized();
-        
+        Vec4d vec { 1, 2, 3, 4 };
+        Vec4d normalized = vec.Normalized();
+        // https://www.redcrab-software.com/en/Calculator/Vector/Normalization
+        ASSERT_VEC4_APPROX(normalized, 0.18, 0.37, 0.55, 0.73);
+    }
+
+    // lerp
+    {
+        Vec4d a(2);
+        Vec4d b(4);
+        Vec4d c = Vec4d::Lerp(a, b, 0.5);
+        ASSERT_VEC4_APPROX(c, 3, 3, 3, 3);
     }
 
     return 0;
