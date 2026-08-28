@@ -6,6 +6,8 @@
 #include <format>
 #include <cmath>
 
+#include "Vec3.h"
+
 namespace cge
 {
     /**
@@ -43,6 +45,13 @@ namespace cge
          * @param w The W component.
          */
         Vec4(T x, T y, T z, T w) : X(x), Y(y), Z(z), W(w) { }
+
+        /**
+         * Construct a Vec4 from a Vec3 and W component.
+         * @param vec3 The Vec3 to assign to the X, Y, and Z components.
+         * @param w The W component.
+         */
+        Vec4(const Vec3<T>& vec3, T w) : X(vec3.X), Y(vec3.Y), Z(vec3.Z), W(w) { }
 
         /**
          * Construct a Vec4 from a scalar value.
