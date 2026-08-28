@@ -26,6 +26,12 @@ int main(int argc, char* argv[])
         ASSERT_VEC4(vec, 1, 2, 3, 4);
     }
 
+    // vec3 construction
+    {
+        Vec4i vec(Vec3i(1, 2, 3), 4);
+        ASSERT_VEC4(vec, 1, 2, 3, 4);
+    }
+
     // scalar construction
     {
         Vec4i vec(1);

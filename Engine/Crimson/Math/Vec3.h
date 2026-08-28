@@ -6,6 +6,8 @@
 #include <format>
 #include <cmath>
 
+#include "Vec2.h"
+
 namespace cge
 {
     /**
@@ -37,6 +39,13 @@ namespace cge
          * @param z The Z component.
          */
         Vec3(T x, T y, T z) : X(x), Y(y), Z(z) { }
+
+        /**
+         * Construct a Vec3 from a Vec2 and Z component.
+         * @param vec2 The Vec2 to assign to the X and Y components.
+         * @param z The Z component.
+         */
+        Vec3(const Vec2<T>& vec2, T z) : X(vec2.X), Y(vec2.Y), Z(z) { }
 
         /**
          * Construct a Vec3 from a scalar value.
