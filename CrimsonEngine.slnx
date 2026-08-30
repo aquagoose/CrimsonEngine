@@ -1,1 +1,3 @@
-<Solution />
+<Solution>
+  <Project Path="src/Crimson.Core/Crimson.Core.csproj" />
+</Solution>
