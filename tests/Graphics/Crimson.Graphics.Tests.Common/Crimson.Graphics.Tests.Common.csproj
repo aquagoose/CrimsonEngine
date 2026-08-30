@@ -1,0 +1,17 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+    <PropertyGroup>
+        <TargetFramework>net10.0</TargetFramework>
+        <ImplicitUsings>enable</ImplicitUsings>
+        <Nullable>enable</Nullable>
+    </PropertyGroup>
+
+    <ItemGroup>
+      <ProjectReference Include="..\..\..\src\Crimson.Graphics\Crimson.Graphics.csproj" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="piko.SDL3" Version="0.0.6" />
+    </ItemGroup>
+
+</Project>
