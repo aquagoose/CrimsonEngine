@@ -3,4 +3,5 @@
     <File Path="tests\LoggerTest.cs" />
   </Folder>
   <Project Path="src/Crimson.Core/Crimson.Core.csproj" />
+  <Project Path="src/Crimson.Graphics/Crimson.Graphics.csproj" />
 </Solution>
