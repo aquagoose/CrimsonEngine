@@ -8,4 +8,5 @@
   </Folder>
   <Project Path="src/Crimson.Core/Crimson.Core.csproj" />
   <Project Path="src/Crimson.Graphics/Crimson.Graphics.csproj" />
+  <Project Path="src/Crimson.Math/Crimson.Math.csproj" />
 </Solution>
