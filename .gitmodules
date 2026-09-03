@@ -1,3 +1,6 @@
 [submodule "Engine/External/SDL"]
 	path = Engine/External/SDL
 	url = https://github.com/libsdl-org/SDL
+[submodule "Engine/External/stb"]
+	path = Engine/External/stb
+	url = https://github.com/aquagoose/stb
