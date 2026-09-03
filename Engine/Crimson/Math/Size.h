@@ -14,12 +14,12 @@ namespace cge
         /**
          * The width.
          */
-        const T Width;
+        T Width;
 
         /**
          * The height.
          */
-        const T Height;
+        T Height;
 
         /**
          * Construct a size with a width and height.
@@ -33,6 +33,11 @@ namespace cge
          * @param wh The value to apply to both the width and height.
          */
         explicit Size(T wh) : Width(wh), Height(wh) {}
+
+        /**
+         * Construct an empty size.
+         */
+        Size() : Width(0), Height(0) {}
 
         friend bool operator ==(const Size& lhs, const Size& rhs)
         {
