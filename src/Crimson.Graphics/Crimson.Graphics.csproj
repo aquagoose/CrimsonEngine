@@ -1,8 +1,10 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
   <ItemGroup>
     <PackageReference Include="piko.SDL3" Version="0.0.6" />
+    <PackageReference Include="StbImageSharp" Version="2.30.16" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Crimson.Core\Crimson.Core.csproj" />
+    <ProjectReference Include="..\Crimson.Math\Crimson.Math.csproj" />
   </ItemGroup>
 </Project>
