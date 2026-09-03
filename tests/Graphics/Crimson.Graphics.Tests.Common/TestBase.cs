@@ -6,8 +6,6 @@ public abstract class TestBase(string name) : IDisposable
 {
     private SDL.Window _window;
 
-    public Renderer Renderer;
-
     protected virtual void Init() { }
     protected virtual void Loop(float dt) { }
 
@@ -20,7 +18,7 @@ public abstract class TestBase(string name) : IDisposable
         if (_window.IsNull)
             throw new Exception($"Failed to create window: {SDL.GetError()}");
 
-        Renderer = new Renderer(_window);
+        Renderer.Init(_window);
 
         Init();
 
@@ -45,7 +43,7 @@ public abstract class TestBase(string name) : IDisposable
 
     public virtual void Dispose()
     {
-        Renderer.Dispose();
+        Renderer.Free();
         SDL.DestroyWindow(_window);
         SDL.Quit();
     }

@@ -1,4 +1,5 @@
-﻿using Crimson.Core;
+﻿using System.Diagnostics;
+using Crimson.Core;
 using Crimson.Graphics.Utils;
 using piko.SDL3;
 
@@ -7,66 +8,55 @@ namespace Crimson.Graphics;
 /// <summary>
 /// Performs 2D and 3D rendering to draw objects to the display.
 /// </summary>
-public sealed class Renderer : IDisposable
+public static class Renderer
 {
-    public bool IsDisposed { get; private set; }
+    /// <summary>
+    /// Gets if the <see cref="Renderer"/> has been initialized.
+    /// </summary>
+    public static bool IsInitialized { get; private set; }
 
-    private readonly SDL.Window _window;
-
-    internal readonly SDL.GPUDevice Device;
+    internal static RendererContext Context;
 
     /// <summary>
     /// Gets the graphics backend name for this renderer.
     /// </summary>
-    public string BackendName => SDL.GetGPUDeviceDriver(Device);
+    public static string BackendName => SDL.GetGPUDeviceDriver(Context.Device);
 
     /// <summary>
-    /// Create a new <see cref="Renderer"/>.
+    /// Initialize the <see cref="Renderer"/>.
     /// </summary>
     /// <param name="window">The SDL3 window to associate with this renderer.</param>
-    public Renderer(SDL.Window window)
+    public static void Init(SDL.Window window)
     {
-        _window = window;
+        Debug.Assert(!IsInitialized, "The renderer has already been initialized!");
 
-        uint props = SDL.CreateProperties();
-        // always enable vulkan as a fallback and for linux
-        SDL.SetBooleanProperty(props, SDL.Prop.GpuDeviceCreateShadersSpirvBoolean, true);
+        Context = new RendererContext(window);
 
-        // enable d3d12 on windows
-        if (OperatingSystem.IsWindows())
-            SDL.SetBooleanProperty(props, SDL.Prop.GpuDeviceCreateShadersDxilBoolean, true);
+        IsInitialized = true;
+    }
 
-        // enable metal on macos
-        if (OperatingSystem.IsMacOS())
-            SDL.SetBooleanProperty(props, SDL.Prop.GpuDeviceCreateShadersMslBoolean, true);
+    /// <summary>
+    /// Free the current <see cref="Renderer"/>.
+    /// </summary>
+    public static void Free()
+    {
+        Debug.Assert(IsInitialized, "The renderer has not been initialized!");
+        SDL.WaitForGPUIdle(Context.Device);
 
-#if DEBUG
-        SDL.SetBooleanProperty(props, SDL.Prop.GpuDeviceCreateDebugmodeBoolean, true);
-        SDL.SetBooleanProperty(props, SDL.Prop.GpuDeviceCreateVerboseBoolean, true);
-#endif
-
-        Logger.Trace("Creating device.");
-        Device = SDL.CreateGPUDeviceWithProperties(props).Check("Create device");
-        SDL.DestroyProperties(props);
-
-        uint deviceProps = SDL.GetGPUDeviceProperties(Device);
-        Logger.Info($"Backend: {SDL.GetGPUDeviceDriver(Device)}");
-        Logger.Info($"Device: {SDL.GetStringProperty(deviceProps, SDL.Prop.GpuDeviceNameString, "unknown")}");
-        Logger.Info($"Driver: {SDL.GetStringProperty(deviceProps, SDL.Prop.GpuDeviceDriverInfoString, "unknown")}");
-        SDL.DestroyProperties(deviceProps);
-
-        Logger.Trace("Claiming window for device.");
-        SDL.ClaimWindowForGPUDevice(Device, _window).Check("Claim window for device");
+        Context.Dispose();
+        IsInitialized = false;
     }
 
     /// <summary>
     /// Render everything to the display.
     /// </summary>
-    public void Render()
+    public static void Render()
     {
-        SDL.GPUCommandBuffer cb = SDL.AcquireGPUCommandBuffer(Device).Check("Acquire command buffer");
+        Debug.Assert(IsInitialized, "The renderer has not been initialized!");
 
-        SDL.WaitAndAcquireGPUSwapchainTexture(cb, _window, out SDL.GPUTexture swapchainTexture, out _, out _)
+        SDL.GPUCommandBuffer cb = SDL.AcquireGPUCommandBuffer(Context.Device).Check("Acquire command buffer");
+
+        SDL.WaitAndAcquireGPUSwapchainTexture(cb, Context.Window, out SDL.GPUTexture swapchainTexture, out _, out _)
             .Check("Acquire swapchain texture");
 
         // don't try to render if there's nothing to render to.
@@ -88,20 +78,5 @@ public sealed class Renderer : IDisposable
         SDL.EndGPURenderPass(pass);
 
         SDL.SubmitGPUCommandBuffer(cb).Check("Submit command buffer");
-    }
-
-    /// <summary>
-    /// Dispose of this <see cref="Renderer"/>.
-    /// </summary>
-    public void Dispose()
-    {
-        if (IsDisposed)
-            return;
-        IsDisposed = true;
-
-        SDL.WaitForGPUIdle(Device);
-
-        SDL.ReleaseWindowFromGPUDevice(Device, _window);
-        SDL.DestroyGPUDevice(Device);
     }
 }
