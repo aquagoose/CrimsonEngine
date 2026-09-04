@@ -1,8 +1,11 @@
 #pragma once
 
-#include <memory>
-
 #include "Private/RenderContext.h"
+#include "Texture.h"
+#include "Bitmap.h"
+#include "Math/Size.h"
+
+#include <memory>
 
 namespace cge
 {
@@ -19,6 +22,10 @@ namespace cge
          * @param window The SDL3 window to associate the renderer with.
          */
         explicit Renderer(SDL_Window* window);
+
+        std::unique_ptr<Texture> CreateTexture(void* data, const Sizeu& size, PixelFormat format, bool generateMips = true);
+        std::unique_ptr<Texture> CreateTexture(const Bitmap& bitmap, bool generateMips = true);
+        std::unique_ptr<Texture> CreateTexture(const std::string& path, bool generateMips = true);
 
         /**
          * Process and render all geometry to the window.
