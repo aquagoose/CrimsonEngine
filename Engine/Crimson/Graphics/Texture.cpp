@@ -2,8 +2,8 @@
 
 namespace cge
 {
-    Texture::Texture(Private::RenderContext& context, SDL_GPUTexture* texture)
-        : _context(context), TextureHandle(texture) {}
+    Texture::Texture(Private::RenderContext& context, SDL_GPUTexture* texture, bool generateMips)
+        : _context(context), _generateMips(generateMips), TextureHandle(texture) {}
 
     Texture::~Texture()
     {

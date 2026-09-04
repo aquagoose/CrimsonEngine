@@ -9,10 +9,11 @@ namespace cge
         friend class Renderer;
 
         Private::RenderContext& _context;
+        bool _generateMips;
 
         SDL_GPUTexture* TextureHandle;
 
-        Texture(Private::RenderContext& context, SDL_GPUTexture* texture);
+        Texture(Private::RenderContext& context, SDL_GPUTexture* texture, bool generateMips);
 
     public:
         ~Texture();

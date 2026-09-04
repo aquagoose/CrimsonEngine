@@ -26,15 +26,24 @@ namespace cge
                 CGE_FATAL("Invalid pixel format!");
         }
 
+        SDL_GPUTextureUsageFlags usage = SDL_GPU_TEXTUREUSAGE_SAMPLER;
+        u32 mipLevels = 1;
+
+        if (generateMips)
+        {
+            usage |= SDL_GPU_TEXTUREUSAGE_COLOR_TARGET;
+            mipLevels = Private::SDLUtils::CalculateMipLevels(size);
+        }
+
         SDL_GPUTextureCreateInfo textureInfo
         {
             .type = SDL_GPU_TEXTURETYPE_2D,
             .format = texFormat,
-            .usage = SDL_GPU_TEXTUREUSAGE_SAMPLER,
+            .usage = usage,
             .width = size.Width,
             .height = size.Height,
             .layer_count_or_depth = 1,
-            .num_levels = 1, // todo: generate mips
+            .num_levels = mipLevels,
             .sample_count = SDL_GPU_SAMPLECOUNT_1
         };
 
@@ -44,9 +53,13 @@ namespace cge
         CGE_SDL_CHECK(texture, "Create texture")
 
         if (data)
+        {
             _context->CopyDataToTexture(texture, data, Vec2u(0), size, texFormat);
+            if (generateMips)
+                _context->MipmapQueue.insert(texture);
+        }
 
-        return std::unique_ptr<Texture>(new Texture(*_context, texture));
+        return std::unique_ptr<Texture>(new Texture(*_context, texture, generateMips));
     }
 
     std::unique_ptr<Texture> Renderer::CreateTexture(const Bitmap& bitmap, bool generateMips) const
@@ -64,6 +77,13 @@ namespace cge
     {
         SDL_GPUCommandBuffer* cb = SDL_AcquireGPUCommandBuffer(_context->Device);
         CGE_SDL_CHECK(cb, "Acquire command buffer");
+
+        for (const auto& texture : _context->MipmapQueue)
+        {
+            CGE_TRACE("Generating mipmaps for texture {}", reinterpret_cast<usize>(texture));
+            SDL_GenerateMipmapsForGPUTexture(cb, texture);
+        }
+        _context->MipmapQueue.clear();
 
         SDL_GPUTexture* swapchainTexture;
         CGE_SDL_CHECK(SDL_WaitAndAcquireGPUSwapchainTexture(cb, _context->Window, &swapchainTexture, nullptr, nullptr),

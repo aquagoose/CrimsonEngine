@@ -1,11 +1,11 @@
 #pragma once
 
 #include "Math/Coredefs.h"
-
-#include <SDL3/SDL.h>
-
 #include "Math/Size.h"
 #include "Math/Vec2.h"
+
+#include <SDL3/SDL.h>
+#include <unordered_set>
 
 namespace cge::Private
 {
@@ -24,6 +24,8 @@ namespace cge::Private
     public:
         SDL_Window* Window;
         SDL_GPUDevice* Device;
+
+        std::unordered_set<SDL_GPUTexture*> MipmapQueue;
 
         explicit RenderContext(SDL_Window* window);
         ~RenderContext();
