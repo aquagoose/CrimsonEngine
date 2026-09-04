@@ -22,8 +22,9 @@ namespace cge
          * @param window The SDL3 window to associate the renderer with.
          */
         explicit Renderer(SDL_Window* window);
+        ~Renderer();
 
-        std::unique_ptr<Texture> CreateTexture(void* data, const Sizeu& size, PixelFormat format, bool generateMips = true);
+        std::unique_ptr<Texture> CreateTexture(void* data, const Sizeu& size, PixelFormat format, bool generateMips = true) const;
         std::unique_ptr<Texture> CreateTexture(const Bitmap& bitmap, bool generateMips = true);
         std::unique_ptr<Texture> CreateTexture(const std::string& path, bool generateMips = true);
 

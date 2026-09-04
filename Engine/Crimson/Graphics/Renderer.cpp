@@ -9,7 +9,12 @@ namespace cge
         _context = std::make_unique<Private::RenderContext>(window);
     }
 
-    std::unique_ptr<Texture> Renderer::CreateTexture(void* data, const Sizeu& size, PixelFormat format, bool generateMips)
+    Renderer::~Renderer()
+    {
+        SDL_WaitForGPUIdle(_context->Device);
+    }
+
+    std::unique_ptr<Texture> Renderer::CreateTexture(void* data, const Sizeu& size, PixelFormat format, bool generateMips) const
     {
         SDL_GPUTextureFormat texFormat;
         switch (format)
@@ -33,11 +38,13 @@ namespace cge
             .sample_count = SDL_GPU_SAMPLECOUNT_1
         };
 
-
         // todo size tostring
         CGE_TRACE("Creating {}x{} texture.", size.Width, size.Height);
         SDL_GPUTexture* texture = SDL_CreateGPUTexture(_context->Device, &textureInfo);
         CGE_SDL_CHECK(texture, "Create texture")
+
+        if (data)
+            _context->CopyDataToTexture(texture, data, Vec2u(0), size, texFormat);
 
         return std::unique_ptr<Texture>(new Texture(*_context, texture));
     }
