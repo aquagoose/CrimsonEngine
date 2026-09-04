@@ -25,8 +25,8 @@ namespace cge
         ~Renderer();
 
         std::unique_ptr<Texture> CreateTexture(void* data, const Sizeu& size, PixelFormat format, bool generateMips = true) const;
-        std::unique_ptr<Texture> CreateTexture(const Bitmap& bitmap, bool generateMips = true);
-        std::unique_ptr<Texture> CreateTexture(const std::string& path, bool generateMips = true);
+        std::unique_ptr<Texture> CreateTexture(const Bitmap& bitmap, bool generateMips = true) const;
+        std::unique_ptr<Texture> CreateTexture(const std::string& path, bool generateMips = true) const;
 
         /**
          * Process and render all geometry to the window.

@@ -49,12 +49,12 @@ namespace cge
         return std::unique_ptr<Texture>(new Texture(*_context, texture));
     }
 
-    std::unique_ptr<Texture> Renderer::CreateTexture(const Bitmap& bitmap, bool generateMips)
+    std::unique_ptr<Texture> Renderer::CreateTexture(const Bitmap& bitmap, bool generateMips) const
     {
         return CreateTexture(bitmap.Data, bitmap.Size, bitmap.Format, generateMips);
     }
 
-    std::unique_ptr<Texture> Renderer::CreateTexture(const std::string& path, bool generateMips)
+    std::unique_ptr<Texture> Renderer::CreateTexture(const std::string& path, bool generateMips) const
     {
         Bitmap bitmap(path);
         return CreateTexture(bitmap.Data, bitmap.Size, bitmap.Format, generateMips);
