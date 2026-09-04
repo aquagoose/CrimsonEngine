@@ -11,7 +11,7 @@ int main(int argc, char* argv[])
         CGE_FATAL("Failed to create window: {}", SDL_GetError());
 
     auto renderer = new cge::Renderer(window);
-    auto texture = renderer->CreateTexture("/Users/aqua/Pictures/DEBUG.png");
+    auto texture = renderer->CreateTexture("Content/DEBUG.png");
 
     bool alive = true;
     while (alive)

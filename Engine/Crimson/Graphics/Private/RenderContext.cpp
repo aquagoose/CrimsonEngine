@@ -1,8 +1,11 @@
 #include "RenderContext.h"
+
 #include "SDLUtils.h"
 
 #include "Core/Logger.h"
 #include "Core/BitUtils.h"
+
+#include <cstring>
 
 namespace cge::Private
 {
@@ -125,8 +128,8 @@ namespace cge::Private
         SDL_GPUTextureRegion dest
         {
             .texture = texture,
-            .mip_level = 1,
-            .layer = 1,
+            .mip_level = 0,
+            .layer = 0,
             .x = pos.X,
             .y = pos.Y,
             .z = 0,
