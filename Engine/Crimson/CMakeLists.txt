@@ -14,7 +14,7 @@ if (CGE_SUBSYSTEM_GRAPHICS)
     file(GLOB_RECURSE CGE_GRAPHICS_SRC CONFIGURE_DEPENDS Graphics/*.h Graphics/*.cpp)
     list(APPEND CGE_SRC ${CGE_GRAPHICS_SRC})
     add_compile_definitions(CGE_SUBSYSTEM_GRAPHICS)
-    list(APPEND CGE_LIBS SDL3::SDL3 stb)
+    list(APPEND CGE_LIBS SDL3::SDL3 SDL3_shadercross::SDL3_shadercross stb)
 endif ()
 
 add_library(Crimson STATIC ${CGE_SRC})
