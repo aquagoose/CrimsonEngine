@@ -98,6 +98,21 @@ namespace cge::Private
         return buffer;
     }
 
+    SDL_GPUBuffer* RenderContext::CreateBuffer(SDL_GPUBufferUsageFlags usage, u32 size) const
+    {
+        SDL_GPUBufferCreateInfo bufferInfo
+        {
+            .usage = usage,
+            .size = size
+        };
+
+        CGE_TRACE("Creating {}KiB buffer", size / 1024);
+        SDL_GPUBuffer* buffer = SDL_CreateGPUBuffer(Device, &bufferInfo);
+        CGE_SDL_CHECK(buffer, "Create buffer");
+
+        return buffer;
+    }
+
     SDL_GPUTransferBuffer* RenderContext::GetUploadBuffer(u32 size, u32& offset, bool& shouldCycle)
     {
         if (size >= _transferBufferSize)

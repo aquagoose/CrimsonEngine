@@ -8,7 +8,8 @@ namespace cge
     {
         _context = std::make_unique<Private::RenderContext>(window);
 
-        SDL_GPUShader* test = _context->CreateShader(SDL_SHADERCROSS_SHADERSTAGE_VERTEX, "SpriteRenderer", "VSMain");
+        SDL_GPUTextureFormat format = SDL_GetGPUSwapchainTextureFormat(_context->Device, _context->Window);
+        _uiBatcher = std::make_unique<Private::TextureBatcher>(*_context, format);
     }
 
     Renderer::~Renderer()

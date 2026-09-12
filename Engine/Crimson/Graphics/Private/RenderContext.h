@@ -34,8 +34,9 @@ namespace cge::Private
 
         [[nodiscard]] SDL_GPUShader* CreateShader(SDL_ShaderCross_ShaderStage stage, const std::string& name, const std::string& entryPoint);
         [[nodiscard]] SDL_GPUTransferBuffer* CreateTransferBuffer(SDL_GPUTransferBufferUsage usage, u32 size) const;
+        [[nodiscard]] SDL_GPUBuffer* CreateBuffer(SDL_GPUBufferUsageFlags usage, u32 size) const;
 
-        SDL_GPUTransferBuffer* GetUploadBuffer(u32 size, u32& offset, bool& shouldCycle);
+        [[nodiscard]] SDL_GPUTransferBuffer* GetUploadBuffer(u32 size, u32& offset, bool& shouldCycle);
 
         void CopyDataToTexture(SDL_GPUTexture* texture, void* data, const Vec2u& pos, const Sizeu& size, SDL_GPUTextureFormat format);
     };

@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Private/RenderContext.h"
+#include "Private/Renderers/TextureBatcher.h"
+
 #include "Texture.h"
 #include "Bitmap.h"
 #include "Math/Size.h"
@@ -15,6 +17,7 @@ namespace cge
     class Renderer final
     {
         std::unique_ptr<Private::RenderContext> _context;
+        std::unique_ptr<Private::TextureBatcher> _uiBatcher;
 
     public:
         /**
