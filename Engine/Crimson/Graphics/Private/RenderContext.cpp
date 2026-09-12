@@ -1,6 +1,6 @@
 #include "RenderContext.h"
 
-#include <__filesystem/filesystem_error.h>
+#include <cstring>
 
 #include "SDLUtils.h"
 
