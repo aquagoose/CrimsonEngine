@@ -1,6 +1,7 @@
 #include "RenderContext.h"
 
 #include <cstring>
+#include <vulkan/vulkan.h>
 
 #include "SDLUtils.h"
 
@@ -13,9 +14,15 @@ namespace cge::Private
 {
     RenderContext::RenderContext(SDL_Window* window) : Window(window)
     {
+        SDL_GPUVulkanOptions vulkanOptions
+        {
+            .vulkan_api_version = VK_API_VERSION_1_1,
+        };
+
         SDL_PropertiesID props = SDL_CreateProperties();
         // always enable vulkan
         SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_SHADERS_SPIRV_BOOLEAN, true);
+        SDL_SetPointerProperty(props, SDL_PROP_GPU_DEVICE_CREATE_VULKAN_OPTIONS_POINTER, &vulkanOptions);
 
         // use d3d12 on windows
 #ifdef CGE_PLATFORM_WINDOWS
@@ -60,12 +67,10 @@ namespace cge::Private
         SDL_DestroyGPUDevice(Device);
     }
 
-    SDL_GPUShader* RenderContext::CreateShader(SDL_ShaderCross_ShaderStage stage, const std::string& name,const std::string& entryPoint)
+    SDL_GPUShader* RenderContext::CreateShader(SDL_ShaderCross_ShaderStage stage, const std::string& name,const std::string& entryPoint, SDL_ShaderCross_GraphicsShaderResourceInfo resources)
     {
         auto fullPath = Path::Combine(CGE_CONTENT_DIR, "Shaders", std::format("{}.spv", name));
         auto data = File::ReadBytes(fullPath);
-
-        SDL_ShaderCross_GraphicsShaderMetadata* metadata = SDL_ShaderCross_ReflectGraphicsSPIRV(data.data(), data.size(), 0);
 
         SDL_ShaderCross_SPIRV_Info spirvInfo
         {
@@ -76,10 +81,9 @@ namespace cge::Private
         };
 
         CGE_TRACE("Creating shader.");
-        SDL_GPUShader* shader = SDL_ShaderCross_CompileGraphicsShaderFromSPIRV(Device, &spirvInfo, &metadata->resource_info, 0);
+        SDL_GPUShader* shader = SDL_ShaderCross_CompileGraphicsShaderFromSPIRV(Device, &spirvInfo, &resources, 0);
         CGE_SDL_CHECK(shader, "Create shader");
 
-        SDL_free(metadata);
         return shader;
     }
 

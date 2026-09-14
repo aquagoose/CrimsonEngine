@@ -32,7 +32,7 @@ namespace cge::Private
         explicit RenderContext(SDL_Window* window);
         ~RenderContext();
 
-        [[nodiscard]] SDL_GPUShader* CreateShader(SDL_ShaderCross_ShaderStage stage, const std::string& name, const std::string& entryPoint);
+        [[nodiscard]] SDL_GPUShader* CreateShader(SDL_ShaderCross_ShaderStage stage, const std::string& name, const std::string& entryPoint, SDL_ShaderCross_GraphicsShaderResourceInfo resources);
         [[nodiscard]] SDL_GPUTransferBuffer* CreateTransferBuffer(SDL_GPUTransferBufferUsage usage, u32 size) const;
         [[nodiscard]] SDL_GPUBuffer* CreateBuffer(SDL_GPUBufferUsageFlags usage, u32 size) const;
 

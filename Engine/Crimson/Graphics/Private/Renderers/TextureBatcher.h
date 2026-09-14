@@ -1,6 +1,7 @@
 #pragma once
 
 #include "../RenderContext.h"
+#include "../../Texture.h"
 #include "Math/Vec2.h"
 #include "Math/Vec4.h"
 
@@ -10,34 +11,46 @@ namespace cge::Private
 {
     class TextureBatcher final
     {
-        struct Vertex;
-        using Index = u32;
-
-        static constexpr u32 InitialMaxSprites = 4096;
-
-        static constexpr u32 NumVertices = 4;
-        static constexpr u32 NumIndices = 6;
-
-        RenderContext& _context;
-
-        std::vector<Vertex> _vertices;
-        std::vector<Index> _indices;
-
-        SDL_GPUBuffer* _vertexBuffer;
-        SDL_GPUBuffer* _indexBuffer;
-
-        SDL_GPUGraphicsPipeline* _pipeline;
-
     public:
-        TextureBatcher(RenderContext& context, SDL_GPUTextureFormat outFormat);
-        ~TextureBatcher();
+        struct Draw
+        {
+            cge::Texture& Texture;
+            Vec2f TopLeft;
+            Vec2f TopRight;
+            Vec2f BottomLeft;
+            Vec2f BottomRight;
+            Vec4f Tint; // todo replace with color
+        };
 
     private:
+        using Index = u32;
         struct Vertex
         {
             Vec2f Position;
             Vec2f TexCoord;
             Vec4f Tint; // todo replace with Color
         };
+
+        // the initial maximum number of sprites per batch, before the batch is expanded.
+        static constexpr u32 InitialBatchSize = 4096;
+
+        static constexpr u32 NumVertices = 4; // the number of vertices per sprite
+        static constexpr u32 NumIndices = 6; // the number of indices per sprite
+
+        RenderContext& _context;
+
+        SDL_GPUBuffer* _vertexBuffer;
+        SDL_GPUBuffer* _indexBuffer;
+        u32 _batchSize;
+
+        SDL_GPUGraphicsPipeline* _pipeline;
+
+        std::vector<Draw> _draws;
+
+    public:
+        TextureBatcher(RenderContext& context, SDL_GPUTextureFormat outFormat);
+        ~TextureBatcher();
+
+        void AddToBatch(const Draw& draw);
     };
 }

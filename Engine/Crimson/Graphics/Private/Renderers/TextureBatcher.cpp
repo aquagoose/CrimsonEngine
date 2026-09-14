@@ -6,14 +6,12 @@ namespace cge::Private
 {
     TextureBatcher::TextureBatcher(RenderContext& context, SDL_GPUTextureFormat outFormat) : _context(context)
     {
-        _vertices.reserve(NumVertices * InitialMaxSprites);
-        _indices.reserve(NumIndices * InitialMaxSprites);
+        _batchSize = InitialBatchSize;
+        _vertexBuffer = _context.CreateBuffer(SDL_GPU_BUFFERUSAGE_VERTEX, _batchSize * NumVertices * sizeof(Vertex));
+        _indexBuffer = _context.CreateBuffer(SDL_GPU_BUFFERUSAGE_INDEX, _batchSize * NumIndices * sizeof(Index));
 
-        _vertexBuffer = _context.CreateBuffer(SDL_GPU_BUFFERUSAGE_VERTEX, _vertices.capacity() * sizeof(Vertex));
-        _indexBuffer = _context.CreateBuffer(SDL_GPU_BUFFERUSAGE_INDEX, _indices.capacity() * sizeof(Index));
-
-        SDL_GPUShader* vtxShader = _context.CreateShader(SDL_SHADERCROSS_SHADERSTAGE_VERTEX, "SpriteRenderer", "VSMain");
-        SDL_GPUShader* pxlShader = _context.CreateShader(SDL_SHADERCROSS_SHADERSTAGE_FRAGMENT, "SpriteRenderer", "PSMain");
+        SDL_GPUShader* vtxShader = _context.CreateShader(SDL_SHADERCROSS_SHADERSTAGE_VERTEX, "TextureBatcher", "VSMain",  { .num_uniform_buffers = 1 });
+        SDL_GPUShader* pxlShader = _context.CreateShader(SDL_SHADERCROSS_SHADERSTAGE_FRAGMENT, "TextureBatcher", "PSMain", { .num_samplers = 1 });
 
         SDL_GPUVertexBufferDescription vertexBuffer
         {
@@ -92,5 +90,10 @@ namespace cge::Private
         SDL_ReleaseGPUGraphicsPipeline(_context.Device, _pipeline);
         SDL_ReleaseGPUBuffer(_context.Device, _indexBuffer);
         SDL_ReleaseGPUBuffer(_context.Device, _vertexBuffer);
+    }
+
+    void TextureBatcher::AddToBatch(const Draw &draw)
+    {
+        _draws.emplace_back(draw);
     }
 }

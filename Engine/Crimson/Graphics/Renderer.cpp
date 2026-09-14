@@ -62,7 +62,7 @@ namespace cge
                 _context->MipmapQueue.insert(texture);
         }
 
-        return std::unique_ptr<Texture>(new Texture(*_context, texture, generateMips));
+        return std::unique_ptr<Texture>(new Texture(*_context, texture, size, generateMips));
     }
 
     std::unique_ptr<Texture> Renderer::CreateTexture(const Bitmap& bitmap, bool generateMips) const
@@ -74,6 +74,23 @@ namespace cge
     {
         Bitmap bitmap(path);
         return CreateTexture(bitmap.Data, bitmap.Size, bitmap.Format, generateMips);
+    }
+
+    void Renderer::DrawImage(Texture& texture, Vec2f position)
+    {
+        Sizeu size = texture.Size();
+
+        Private::TextureBatcher::Draw draw
+        {
+            .Texture = texture,
+            .TopLeft = position,
+            .TopRight = position + Vec2f(size.Width, 0),
+            .BottomLeft = position + Vec2f(0, size.Height),
+            .BottomRight = position + Vec2f(size.Width, size.Height),
+            .Tint = { 1.0f, 1.0f, 1.0f, 1.0f }
+        };
+
+        _uiBatcher->AddToBatch(draw);
     }
 
     void Renderer::Render()

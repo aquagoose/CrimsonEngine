@@ -14,20 +14,14 @@ struct VSOutput
     float4 Tint:     COLOR0;
 };
 
-struct SpriteCamera
+struct Camera2D
 {
     float4x4 Projection;
     float4x4 Transform;
 }
 
-struct Sprite
-{
-    Texture2D Texture;
-    SamplerState Sampler;
-}
-
-vertex ParameterBlock<SpriteCamera> camera;
-pixel ParameterBlock<Sprite> sprite;
+VertexUniform<Camera2D> camera;
+PixelTexture<Sampler2D> sprite;
 
 [shader("vertex")]
 VSOutput VSMain(const in Vertex input)
@@ -44,5 +38,5 @@ VSOutput VSMain(const in Vertex input)
 [shader("pixel")]
 float4 PSMain(const in VSOutput input)
 {
-    return sprite.Texture.Sample(sprite.Sampler, input.TexCoord) * input.Tint;
+    return sprite.Sample(input.TexCoord) * input.Tint;
 }
