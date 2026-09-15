@@ -52,8 +52,6 @@ namespace cge::Private
         CGE_TRACE("Associating device with window.");
         CGE_SDL_CHECK(SDL_ClaimWindowForGPUDevice(Device, Window), "Claim window for device");
 
-        SDL_ShaderCross_Init();
-
         _transferBufferSize = TransferBufferInitialSize;
         _transferBufferOffset = 0;
         _transferBuffer = CreateTransferBuffer(SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD, _transferBufferSize);
@@ -62,26 +60,65 @@ namespace cge::Private
     RenderContext::~RenderContext()
     {
         SDL_ReleaseGPUTransferBuffer(Device, _transferBuffer);
-        SDL_ShaderCross_Quit();
         SDL_ReleaseWindowFromGPUDevice(Device, Window);
         SDL_DestroyGPUDevice(Device);
     }
 
-    SDL_GPUShader* RenderContext::CreateShader(SDL_ShaderCross_ShaderStage stage, const std::string& name,const std::string& entryPoint, SDL_ShaderCross_GraphicsShaderResourceInfo resources)
+    SDL_GPUShader* RenderContext::CreateShader(ShaderStage stage, const std::string& name, const std::string& entryPoint, const ShaderInfo& info)
     {
-        auto fullPath = Path::Combine(CGE_CONTENT_DIR, "Shaders", std::format("{}.spv", name));
+        SDL_GPUShaderFormat format = SDL_GetGPUShaderFormats(Device);
+        if ((format & SDL_GPU_SHADERFORMAT_SPIRV) != 0)
+            format = SDL_GPU_SHADERFORMAT_SPIRV;
+        else if ((format & SDL_GPU_SHADERFORMAT_DXIL) != 0)
+            format = SDL_GPU_SHADERFORMAT_DXIL;
+        else if ((format & SDL_GPU_SHADERFORMAT_MSL) != 0)
+            format = SDL_GPU_SHADERFORMAT_MSL;
+
+        std::string fileExtension;
+        switch (format)
+        {
+            case SDL_GPU_SHADERFORMAT_SPIRV:
+                fileExtension = "spv";
+                break;
+            case SDL_GPU_SHADERFORMAT_DXIL:
+                fileExtension = "dxil";
+                break;
+            case SDL_GPU_SHADERFORMAT_MSL:
+                fileExtension = "metal";
+                break;
+            default:
+                CGE_FATAL("Unrecognized shader format {}", format);
+        }
+
+        auto fullPath = Path::Combine(CGE_CONTENT_DIR, "Shaders", std::format("{}.{}", name, fileExtension));
         auto data = File::ReadBytes(fullPath);
 
-        SDL_ShaderCross_SPIRV_Info spirvInfo
+        SDL_GPUShaderStage sdlStage;
+        switch (stage)
         {
-            .bytecode = data.data(),
-            .bytecode_size = data.size(),
+            case ShaderStage::Vertex:
+                sdlStage = SDL_GPU_SHADERSTAGE_VERTEX;
+                break;
+            case ShaderStage::Pixel:
+                sdlStage = SDL_GPU_SHADERSTAGE_FRAGMENT;
+                break;
+        }
+
+        SDL_GPUShaderCreateInfo shaderInfo
+        {
+            .code_size = data.size(),
+            .code = data.data(),
             .entrypoint = entryPoint.c_str(),
-            .shader_stage = stage
+            .format = format,
+            .stage = sdlStage,
+            .num_samplers = info.NumSamplers,
+            .num_storage_textures = info.NumStorageTextures,
+            .num_storage_buffers = info.NumStorageBuffers,
+            .num_uniform_buffers = info.NumUniforms
         };
 
         CGE_TRACE("Creating shader.");
-        SDL_GPUShader* shader = SDL_ShaderCross_CompileGraphicsShaderFromSPIRV(Device, &spirvInfo, &resources, 0);
+        SDL_GPUShader* shader = SDL_CreateGPUShader(Device, &shaderInfo);
         CGE_SDL_CHECK(shader, "Create shader");
 
         return shader;

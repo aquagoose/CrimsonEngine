@@ -10,8 +10,8 @@ namespace cge::Private
         _vertexBuffer = _context.CreateBuffer(SDL_GPU_BUFFERUSAGE_VERTEX, _batchSize * NumVertices * sizeof(Vertex));
         _indexBuffer = _context.CreateBuffer(SDL_GPU_BUFFERUSAGE_INDEX, _batchSize * NumIndices * sizeof(Index));
 
-        SDL_GPUShader* vtxShader = _context.CreateShader(SDL_SHADERCROSS_SHADERSTAGE_VERTEX, "TextureBatcher", "VSMain",  { .num_uniform_buffers = 1 });
-        SDL_GPUShader* pxlShader = _context.CreateShader(SDL_SHADERCROSS_SHADERSTAGE_FRAGMENT, "TextureBatcher", "PSMain", { .num_samplers = 1 });
+        SDL_GPUShader* vtxShader = _context.CreateShader(ShaderStage::Vertex, "TextureBatcher", "VSMain",  { .NumUniforms = 1 });
+        SDL_GPUShader* pxlShader = _context.CreateShader(ShaderStage::Pixel, "TextureBatcher", "PSMain", { .NumSamplers = 1 });
 
         SDL_GPUVertexBufferDescription vertexBuffer
         {

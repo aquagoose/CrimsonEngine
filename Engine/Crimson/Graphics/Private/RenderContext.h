@@ -5,12 +5,25 @@
 #include "Math/Vec2.h"
 
 #include <SDL3/SDL.h>
-#include <SDL3_shadercross/SDL_shadercross.h>
 
 #include <unordered_set>
 
 namespace cge::Private
 {
+    enum class ShaderStage
+    {
+        Vertex,
+        Pixel,
+    };
+
+    struct ShaderInfo
+    {
+        u32 NumSamplers;
+        u32 NumUniforms;
+        u32 NumStorageTextures;
+        u32 NumStorageBuffers;
+    };
+
     /**
      * The core renderer context, containing the core objects for the renderer.
      */
@@ -32,7 +45,7 @@ namespace cge::Private
         explicit RenderContext(SDL_Window* window);
         ~RenderContext();
 
-        [[nodiscard]] SDL_GPUShader* CreateShader(SDL_ShaderCross_ShaderStage stage, const std::string& name, const std::string& entryPoint, SDL_ShaderCross_GraphicsShaderResourceInfo resources);
+        [[nodiscard]] SDL_GPUShader* CreateShader(ShaderStage stage, const std::string& name, const std::string& entryPoint, const ShaderInfo& info);
         [[nodiscard]] SDL_GPUTransferBuffer* CreateTransferBuffer(SDL_GPUTransferBufferUsage usage, u32 size) const;
         [[nodiscard]] SDL_GPUBuffer* CreateBuffer(SDL_GPUBufferUsageFlags usage, u32 size) const;
 
