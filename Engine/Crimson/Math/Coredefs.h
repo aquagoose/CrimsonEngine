@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <limits>
+
+#define F32_MAX std::numeric_limits<f32>::max()
 
 namespace cge
 {

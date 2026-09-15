@@ -28,6 +28,10 @@ int main(int argc, char* argv[])
             }
         }
 
+        renderer->NewFrame();
+
+        renderer->DrawImage(*texture, { 0.0f, 0.0f });
+
         renderer->Render();
     }
 

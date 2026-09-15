@@ -93,6 +93,11 @@ namespace cge
         _uiBatcher->AddToBatch(draw);
     }
 
+    void Renderer::NewFrame()
+    {
+        _uiBatcher->Clear();
+    }
+
     void Renderer::Render()
     {
         SDL_GPUCommandBuffer* cb = SDL_AcquireGPUCommandBuffer(_context->Device);
@@ -116,16 +121,8 @@ namespace cge
             return;
         }
 
-        SDL_GPUColorTargetInfo targetInfo
-        {
-            .texture = swapchainTexture,
-            .clear_color = { 1.0f, 0.5f, 0.25f, 1.0f },
-            .load_op = SDL_GPU_LOADOP_CLEAR,
-            .store_op = SDL_GPU_STOREOP_STORE,
-        };
-        SDL_GPURenderPass* pass = SDL_BeginGPURenderPass(cb, &targetInfo, 1, nullptr);
-        CGE_SDL_CHECK(pass, "Begin render pass");
-        SDL_EndGPURenderPass(pass);
+        _uiBatcher->Render(cb, swapchainTexture, true);
+
         CGE_SDL_CHECK(SDL_SubmitGPUCommandBuffer(cb), "Submit command buffer");
     }
 }

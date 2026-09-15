@@ -18,12 +18,12 @@ namespace cge
         /**
          * The X component.
          */
-        const T X;
+        T X;
 
         /**
          * The Y component.
          */
-        const T Y;
+        T Y;
 
         /**
          * Construct a Vec2 from X and Y components.

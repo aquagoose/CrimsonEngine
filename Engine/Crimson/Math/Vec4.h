@@ -20,22 +20,22 @@ namespace cge
         /**
          * The X component.
          */
-        const T X;
+        T X;
 
         /**
          * The Y component.
          */
-        const T Y;
+        T Y;
 
         /**
          * The Z component.
          */
-        const T Z;
+        T Z;
 
         /**
          * The W component.
          */
-        const T W;
+        T W;
 
         /**
          * Construct a Vec4 from X, Y, Z, and W components.

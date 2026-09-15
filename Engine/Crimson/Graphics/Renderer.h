@@ -33,6 +33,8 @@ namespace cge
 
         void DrawImage(Texture& texture, Vec2f position);
 
+        void NewFrame();
+
         /**
          * Process and render all geometry to the window.
          */

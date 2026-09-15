@@ -12,13 +12,14 @@ namespace cge
         Sizeu _size;
         bool _generateMips;
 
-        SDL_GPUTexture* TextureHandle;
+        SDL_GPUTexture* _handle;
 
         Texture(Private::RenderContext& context, SDL_GPUTexture* texture, Sizeu size, bool generateMips);
 
     public:
         ~Texture();
 
-        [[nodiscard]] Sizeu Size() const;
+        [[nodiscard]] void* Handle() const { return _handle; }
+        [[nodiscard]] Sizeu Size() const { return _size; }
     };
 }
