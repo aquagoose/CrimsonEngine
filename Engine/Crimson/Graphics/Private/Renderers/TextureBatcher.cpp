@@ -3,15 +3,16 @@
 #include <cassert>
 #include <functional>
 
+#include "Core/BitUtils.h"
 #include "Graphics/Private/SDLUtils.h"
 
 namespace cge::Private
 {
     TextureBatcher::TextureBatcher(RenderContext& context, SDL_GPUTextureFormat outFormat) : _context(context)
     {
-        _batchSize = InitialBatchSize;
-        _vertexBuffer = _context.CreateBuffer(SDL_GPU_BUFFERUSAGE_VERTEX, _batchSize * NumVertices * sizeof(Vertex));
-        _indexBuffer = _context.CreateBuffer(SDL_GPU_BUFFERUSAGE_INDEX, _batchSize * NumIndices * sizeof(Index));
+        _maxDraws = InitialMaxDraws;
+        _vertexBuffer = _context.CreateBuffer(SDL_GPU_BUFFERUSAGE_VERTEX, _maxDraws * NumVertices * sizeof(Vertex));
+        _indexBuffer = _context.CreateBuffer(SDL_GPU_BUFFERUSAGE_INDEX, _maxDraws * NumIndices * sizeof(Index));
 
         SDL_GPUShader* vtxShader = _context.CreateShader(ShaderStage::Vertex, "TextureBatcher", "VSMain",  { .NumUniforms = 1 });
         SDL_GPUShader* pxlShader = _context.CreateShader(ShaderStage::Pixel, "TextureBatcher", "PSMain", { .NumSamplers = 1 });
@@ -128,14 +129,28 @@ namespace cge::Private
         if (_draws.empty())
             return false;
 
-        u32 totalVertices = _draws.size() * NumVertices;
-        u32 totalIndices = _draws.size() * NumIndices;
+        // resize the batcher if the number of draws exceeds the current maximum allowed number of draws
+        if (_draws.size() >= _maxDraws)
+        {
+            CGE_TRACE(
+                "Draw count ({} sprites) is greater than the current maximum draw count! ({} sprites). The batcher will be resized.",
+                _draws.size(), _maxDraws);
 
-        u32 size = (totalVertices * sizeof(Vertex)) + (totalIndices * sizeof(Index));
+            _maxDraws = BitUtils::RoundToNearestPowerOf2(_draws.size());
+            SDL_ReleaseGPUBuffer(_context.Device, _vertexBuffer);
+            SDL_ReleaseGPUBuffer(_context.Device, _indexBuffer);
+
+            _vertexBuffer = _context.CreateBuffer(SDL_GPU_BUFFERUSAGE_VERTEX, _maxDraws * NumVertices * sizeof(Vertex));
+            _indexBuffer = _context.CreateBuffer(SDL_GPU_BUFFERUSAGE_INDEX, _maxDraws * NumIndices * sizeof(Index));
+        }
+
+        u32 totalVerticesSize = _draws.size() * NumVertices * sizeof(Vertex);
+        u32 totalIndicesSize = _draws.size() * NumIndices * sizeof(Index);
+        u32 totalSize = totalVerticesSize + totalIndicesSize;
 
         u32 offset;
         bool cycle;
-        SDL_GPUTransferBuffer* transBuffer = _context.GetUploadBuffer(size, offset, cycle);
+        SDL_GPUTransferBuffer* transBuffer = _context.GetUploadBuffer(totalSize, offset, cycle);
 
         void* mapped = SDL_MapGPUTransferBuffer(_context.Device, transBuffer, cycle);
         CGE_SDL_CHECK(mapped, "Map transfer buffer");
@@ -143,7 +158,7 @@ namespace cge::Private
         mapped = static_cast<void*>(static_cast<u8*>(mapped) + offset);
 
         auto vertices = static_cast<Vertex*>(mapped);
-        auto indices = static_cast<Index*>(static_cast<void*>(vertices + totalVertices));
+        auto indices = static_cast<Index*>(static_cast<void*>(static_cast<u8*>(mapped) + totalVerticesSize));
 
         _batches.clear(); // ensure the batches are clear incase Clear is not called in this frame.
         std::optional<std::reference_wrapper<Texture>> currentTexture = {};
@@ -196,20 +211,20 @@ namespace cge::Private
         {
             .buffer = _vertexBuffer,
             .offset = 0,
-            .size = static_cast<u32>(totalVertices * sizeof(Vertex))
+            .size = totalVerticesSize
         };
 
         SDL_GPUTransferBufferLocation idxSrc
         {
             .transfer_buffer = transBuffer,
-            .offset = static_cast<u32>(offset + (totalVertices * sizeof(Vertex))),
+            .offset = offset + totalVerticesSize
         };
 
         SDL_GPUBufferRegion idxDest
         {
             .buffer = _indexBuffer,
             .offset = 0,
-            .size = static_cast<u32>(totalIndices * sizeof(Index))
+            .size = totalIndicesSize
         };
 
         SDL_GPUCopyPass* copyPass = SDL_BeginGPUCopyPass(cb);

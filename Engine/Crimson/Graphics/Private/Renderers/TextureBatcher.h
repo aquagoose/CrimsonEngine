@@ -38,8 +38,8 @@ namespace cge::Private
             u32 NumDraws;
         };
 
-        // the initial maximum number of sprites per batch, before the batch is expanded.
-        static constexpr u32 InitialBatchSize = 4096;
+        // the initial maximum number of draws the batch supports, before expansion.
+        static constexpr u32 InitialMaxDraws = 4096;
 
         static constexpr u32 NumVertices = 4; // the number of vertices per sprite
         static constexpr u32 NumIndices = 6; // the number of indices per sprite
@@ -48,7 +48,7 @@ namespace cge::Private
 
         SDL_GPUBuffer* _vertexBuffer;
         SDL_GPUBuffer* _indexBuffer;
-        u32 _batchSize;
+        u32 _maxDraws; // the maximum draws the batcher currently supports
 
         SDL_GPUGraphicsPipeline* _pipeline;
         SDL_GPUSampler* _sampler; // todo sampler per texture
