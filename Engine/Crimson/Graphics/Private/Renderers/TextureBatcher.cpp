@@ -1,6 +1,7 @@
 #include "TextureBatcher.h"
 
-#include <assert.h>
+#include <cassert>
+#include <functional>
 
 #include "Graphics/Private/SDLUtils.h"
 
@@ -104,6 +105,7 @@ namespace cge::Private
 
     TextureBatcher::~TextureBatcher()
     {
+        SDL_ReleaseGPUSampler(_context.Device, _sampler);
         SDL_ReleaseGPUGraphicsPipeline(_context.Device, _pipeline);
         SDL_ReleaseGPUBuffer(_context.Device, _indexBuffer);
         SDL_ReleaseGPUBuffer(_context.Device, _vertexBuffer);
@@ -145,6 +147,7 @@ namespace cge::Private
 
         _batches.clear(); // ensure the batches are clear incase Clear is not called in this frame.
         std::optional<std::reference_wrapper<Texture>> currentTexture = {};
+        u32 totalDraws = 0;
         u32 currentNumDraws = 0;
         u32 currentOffset = 0;
         for (const Draw& draw : _draws)
@@ -152,28 +155,29 @@ namespace cge::Private
             if (currentNumDraws > 0 && currentTexture.has_value() && &draw.Texture != &currentTexture->get())
             {
                 _batches.emplace_back(currentTexture->get(), currentOffset, currentNumDraws);
-                currentOffset = currentNumDraws;
+                currentOffset = totalDraws;
                 currentNumDraws = 0;
             }
 
             currentTexture = draw.Texture;
 
-            u32 vOffset = currentNumDraws * NumVertices;
-            u32 iOffset = currentNumDraws * NumIndices;
+            u32 vOffset = totalDraws * NumVertices;
+            u32 iOffset = totalDraws * NumIndices;
 
             vertices[vOffset + 0] = { .Position = draw.TopLeft, .TexCoord = { 0, 0 }, .Tint = { 1.0f, 1.0f, 1.0f, 1.0f } };
             vertices[vOffset + 1] = { .Position = draw.TopRight, .TexCoord = { 1, 0 }, .Tint = { 1.0f, 1.0f, 1.0f, 1.0f } };
             vertices[vOffset + 2] = { .Position = draw.BottomRight, .TexCoord = { 1, 1 }, .Tint = { 1.0f, 1.0f, 1.0f, 1.0f } };
             vertices[vOffset + 3] = { .Position = draw.BottomLeft, .TexCoord = { 0, 1 }, .Tint = { 1.0f, 1.0f, 1.0f, 1.0f } };
 
-            indices[iOffset + 0] = 0;
-            indices[iOffset + 1] = 1;
-            indices[iOffset + 2] = 3;
-            indices[iOffset + 3] = 1;
-            indices[iOffset + 4] = 2;
-            indices[iOffset + 5] = 3;
+            indices[iOffset + 0] = 0 + vOffset;
+            indices[iOffset + 1] = 1 + vOffset;
+            indices[iOffset + 2] = 3 + vOffset;
+            indices[iOffset + 3] = 1 + vOffset;
+            indices[iOffset + 4] = 2 + vOffset;
+            indices[iOffset + 5] = 3 + vOffset;
 
             currentNumDraws++;
+            totalDraws++;
         }
 
         assert(currentNumDraws > 0);
@@ -216,19 +220,11 @@ namespace cge::Private
 
         SDL_EndGPUCopyPass(copyPass);
 
-        SDL_GPUColorTargetInfo colorTarget
-        {
-            .texture = texture,
-            .clear_color = { 0.0f, 0.0f, 0.0f, 1.0f },
-            .load_op = clear ? SDL_GPU_LOADOP_CLEAR : SDL_GPU_LOADOP_LOAD,
-            .store_op = SDL_GPU_STOREOP_STORE
-        };
-
         // todo matrix type
         float left = 0;
         float right = 1280;
-        float top = 720;
-        float bottom = 0;
+        float top = 0;
+        float bottom = 720;
         float near = -1;
         float far = 1;
         float projMatrix[16]
@@ -240,6 +236,14 @@ namespace cge::Private
         };
 
         SDL_PushGPUVertexUniformData(cb, 0, projMatrix, 16 * sizeof(float));
+
+        SDL_GPUColorTargetInfo colorTarget
+        {
+            .texture = texture,
+            .clear_color = { 0.0f, 0.0f, 0.0f, 1.0f },
+            .load_op = clear ? SDL_GPU_LOADOP_CLEAR : SDL_GPU_LOADOP_LOAD,
+            .store_op = SDL_GPU_STOREOP_STORE
+        };
 
         SDL_GPURenderPass* renderPass = SDL_BeginGPURenderPass(cb, &colorTarget, 1, nullptr);
         CGE_SDL_CHECK(renderPass, "Begin render pass");
@@ -262,9 +266,11 @@ namespace cge::Private
 
             SDL_BindGPUFragmentSamplers(renderPass, 0, &textureBinding, 1);
 
-            SDL_DrawGPUIndexedPrimitives(renderPass, batch.NumDraws * NumIndices, 1, batch.DrawOffset, batch.DrawOffset * NumVertices, 0);
+            SDL_DrawGPUIndexedPrimitives(renderPass, batch.NumDraws * NumIndices, 1, batch.DrawOffset * NumIndices, 0, 0);
         }
 
         SDL_EndGPURenderPass(renderPass);
+
+        return true;
     }
 }

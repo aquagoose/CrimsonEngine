@@ -1,7 +1,7 @@
 #pragma once
 
-#define VertexTexture layout (set = 0) ParameterBlock
-#define VertexUniform layout (set = 1) ParameterBlock
+#define VertexBlock layout (set = 1) ParameterBlock
+#define PixelBlock layout (set = 3) ParameterBlock
 
-#define PixelTexture layout (set = 2) ParameterBlock
-#define PixelUniform layout (set = 3) ParameterBlock
+#define VertexSampler2D layout (set = 0) Sampler2D
+#define PixelSampler2D layout (set = 2) Sampler2D

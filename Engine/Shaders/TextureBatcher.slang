@@ -17,18 +17,19 @@ struct VSOutput
 struct Camera2D
 {
     float4x4 Projection;
-    float4x4 Transform;
+    //float4x4 Transform;
 }
 
-VertexUniform<Camera2D> camera;
-PixelTexture<Sampler2D> sprite;
+VertexBlock<Camera2D> camera;
+PixelSampler2D sprite;
 
 [shader("vertex")]
 VSOutput VSMain(const in Vertex input)
 {
     VSOutput output;
 
-    output.Position = mul(camera.Projection, mul(camera.Transform, float4(input.Position, 0.0, 1.0)));
+    //output.Position = mul(camera.Projection, mul(camera.Transform, float4(input.Position, 0.0, 1.0)));
+    output.Position = mul(camera.Projection, float4(input.Position, 0.0, 1.0));
     output.TexCoord = input.TexCoord;
     output.Tint = input.Tint;
 

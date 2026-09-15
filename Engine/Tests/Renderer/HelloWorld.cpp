@@ -11,7 +11,9 @@ int main(int argc, char* argv[])
         CGE_FATAL("Failed to create window: {}", SDL_GetError());
 
     auto renderer = new cge::Renderer(window);
+    float value = 0;
     auto texture = renderer->CreateTexture("Content/DEBUG.png");
+    auto texture2 = renderer->CreateTexture("Content/Bagel.png");
 
     bool alive = true;
     while (alive)
@@ -28,13 +30,28 @@ int main(int argc, char* argv[])
             }
         }
 
+        value += 1.0f / 60.0f;
+        if (value >= 2 * M_PI)
+            value -= 2 * M_PI;
+
         renderer->NewFrame();
 
-        renderer->DrawImage(*texture, { 0.0f, 0.0f });
+        for (int i = 0; i < 10; i++)
+        {
+            float v = std::sin(value + i) * 100;
+            renderer->DrawImage(*texture, cge::Vec2f(v, static_cast<float>(i * 50)));
+        }
+
+        for (int i = 0; i < 10; i++)
+        {
+            float v = std::cos(value + i) * 100;
+            renderer->DrawImage(*texture2, cge::Vec2f(600 - v, i * 50));
+        }
 
         renderer->Render();
     }
 
+    texture2.reset();
     texture.reset();
     delete renderer;
     SDL_DestroyWindow(window);

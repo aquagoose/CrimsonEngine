@@ -11,8 +11,6 @@ namespace cge::Private
 {
     class TextureBatcher final
     {
-        friend class cge::Texture;
-
     public:
         struct Draw
         {
