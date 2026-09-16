@@ -1,6 +1,7 @@
 #pragma once
 
 #include "Graphics/Private/RenderContext.h"
+#include "Graphics/Common.h"
 #include "Graphics/Color.h"
 #include "Graphics/Texture.h"
 #include "Math/Vec2.h"
@@ -62,6 +63,6 @@ namespace cge::Private
 
         void Clear();
         void AddToBatch(const Draw& draw);
-        bool Render(SDL_GPUCommandBuffer* cb, SDL_GPUTexture* texture, bool clear);
+        bool Render(SDL_GPUCommandBuffer* cb, SDL_GPUTexture* texture, bool clear, const Camera& camera);
     };
 }

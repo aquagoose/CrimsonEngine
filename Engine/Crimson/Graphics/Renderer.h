@@ -19,6 +19,8 @@ namespace cge
         std::unique_ptr<Private::RenderContext> _context;
         std::unique_ptr<Private::TextureBatcher> _uiBatcher;
 
+        Sizeu _size;
+
     public:
         /**
          * Create a renderer for the given window.

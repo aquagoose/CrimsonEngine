@@ -14,13 +14,7 @@ struct VSOutput
     float4 Tint:     COLOR0;
 };
 
-struct Camera2D
-{
-    float4x4 Projection;
-    //float4x4 Transform;
-}
-
-VertexBlock<Camera2D> camera;
+VertexBlock<Camera> camera;
 PixelSampler2D sprite;
 
 [shader("vertex")]
@@ -28,8 +22,7 @@ VSOutput VSMain(const in Vertex input)
 {
     VSOutput output;
 
-    //output.Position = mul(camera.Projection, mul(camera.Transform, float4(input.Position, 0.0, 1.0)));
-    output.Position = mul(camera.Projection, float4(input.Position, 0.0, 1.0));
+    output.Position = mul(camera.Projection, mul(camera.View, float4(input.Position, 0.0, 1.0)));
     output.TexCoord = input.TexCoord;
     output.Tint = input.Tint;
 

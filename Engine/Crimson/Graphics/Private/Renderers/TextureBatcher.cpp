@@ -124,7 +124,7 @@ namespace cge::Private
         _draws.emplace_back(draw);
     }
 
-    bool TextureBatcher::Render(SDL_GPUCommandBuffer* cb, SDL_GPUTexture* texture, bool clear)
+    bool TextureBatcher::Render(SDL_GPUCommandBuffer* cb, SDL_GPUTexture* texture, bool clear, const Camera& camera)
     {
         // if there's nothing to draw, don't bother.
         if (_draws.empty())
@@ -236,8 +236,7 @@ namespace cge::Private
 
         SDL_EndGPUCopyPass(copyPass);
 
-        Matrixf projection = Matrixf::Orthographic(0, 1280, 720, 0, -1, 1);
-        SDL_PushGPUVertexUniformData(cb, 0, &projection, 16 * sizeof(float));
+        SDL_PushGPUVertexUniformData(cb, 0, &camera, sizeof(Camera));
 
         SDL_GPUColorTargetInfo colorTarget
         {

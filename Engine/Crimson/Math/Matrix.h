@@ -31,6 +31,14 @@ namespace cge
             Row3 = { m30, m31, m32, m33 };
         }
 
+        Matrix()
+        {
+            Row0 = {};
+            Row1 = {};
+            Row2 = {};
+            Row3 = {};
+        }
+
         Vec4<T> Column0() const
         {
             return { Row0.X, Row1.X, Row2.X, Row3.X };

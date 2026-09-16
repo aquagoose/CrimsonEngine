@@ -10,6 +10,10 @@ namespace cge
 
         SDL_GPUTextureFormat format = SDL_GetGPUSwapchainTextureFormat(_context->Device, _context->Window);
         _uiBatcher = std::make_unique<Private::TextureBatcher>(*_context, format);
+
+        int w, h;
+        SDL_GetWindowSizeInPixels(window, &w, &h);
+        _size = { static_cast<u32>(w), static_cast<u32>(h) };
     }
 
     Renderer::~Renderer()
@@ -121,7 +125,12 @@ namespace cge
             return;
         }
 
-        _uiBatcher->Render(cb, swapchainTexture, true);
+        Camera uiCamera
+        {
+            .Projection = Matrixf::Orthographic(0, _size.Width, _size.Height, 0, -1, 1),
+            .View = Matrixf::Identity(),
+        };
+        _uiBatcher->Render(cb, swapchainTexture, true, uiCamera);
 
         CGE_SDL_CHECK(SDL_SubmitGPUCommandBuffer(cb), "Submit command buffer");
     }
