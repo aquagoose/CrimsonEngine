@@ -45,7 +45,7 @@ int main(int argc, char* argv[])
         for (int i = 0; i < 10; i++)
         {
             float v = std::cos(value + i) * 100;
-            renderer->DrawImage(*texture2, cge::Vec2f(600 - v, i * 50));
+            renderer->DrawImage(*texture2, cge::Vec2f(600 - v, i * 50), cge::Color::Aquamarine());
         }
 
         renderer->Render();

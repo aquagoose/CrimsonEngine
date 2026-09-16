@@ -76,7 +76,7 @@ namespace cge
         return CreateTexture(bitmap.Data, bitmap.Size, bitmap.Format, generateMips);
     }
 
-    void Renderer::DrawImage(Texture& texture, Vec2f position)
+    void Renderer::DrawImage(Texture& texture, Vec2f position, const Color& tint) const
     {
         Sizeu size = texture.Size();
 
@@ -87,7 +87,7 @@ namespace cge
             .TopRight = position + Vec2f(size.Width, 0),
             .BottomLeft = position + Vec2f(0, size.Height),
             .BottomRight = position + Vec2f(size.Width, size.Height),
-            .Tint = { 1.0f, 1.0f, 1.0f, 1.0f }
+            .Tint = tint
         };
 
         _uiBatcher->AddToBatch(draw);

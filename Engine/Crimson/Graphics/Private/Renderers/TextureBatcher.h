@@ -1,9 +1,9 @@
 #pragma once
 
-#include "../RenderContext.h"
-#include "../../Texture.h"
+#include "Graphics/Private/RenderContext.h"
+#include "Graphics/Color.h"
+#include "Graphics/Texture.h"
 #include "Math/Vec2.h"
-#include "Math/Vec4.h"
 
 #include <vector>
 
@@ -19,7 +19,7 @@ namespace cge::Private
             Vec2f TopRight;
             Vec2f BottomLeft;
             Vec2f BottomRight;
-            Vec4f Tint; // todo replace with color
+            Color Tint;
         };
 
     private:
@@ -28,7 +28,7 @@ namespace cge::Private
         {
             Vec2f Position;
             Vec2f TexCoord;
-            Vec4f Tint; // todo replace with Color
+            Color Tint;
         };
 
         struct Batch

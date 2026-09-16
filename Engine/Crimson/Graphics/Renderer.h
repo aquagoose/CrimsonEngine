@@ -31,7 +31,7 @@ namespace cge
         std::unique_ptr<Texture> CreateTexture(const Bitmap& bitmap, bool generateMips = true) const;
         std::unique_ptr<Texture> CreateTexture(const std::string& path, bool generateMips = true) const;
 
-        void DrawImage(Texture& texture, Vec2f position);
+        void DrawImage(Texture& texture, Vec2f position, const Color& tint = Color::White()) const;
 
         void NewFrame();
 

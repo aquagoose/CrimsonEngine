@@ -179,10 +179,10 @@ namespace cge::Private
             u32 vOffset = totalDraws * NumVertices;
             u32 iOffset = totalDraws * NumIndices;
 
-            vertices[vOffset + 0] = { .Position = draw.TopLeft, .TexCoord = { 0, 0 }, .Tint = { 1.0f, 1.0f, 1.0f, 1.0f } };
-            vertices[vOffset + 1] = { .Position = draw.TopRight, .TexCoord = { 1, 0 }, .Tint = { 1.0f, 1.0f, 1.0f, 1.0f } };
-            vertices[vOffset + 2] = { .Position = draw.BottomRight, .TexCoord = { 1, 1 }, .Tint = { 1.0f, 1.0f, 1.0f, 1.0f } };
-            vertices[vOffset + 3] = { .Position = draw.BottomLeft, .TexCoord = { 0, 1 }, .Tint = { 1.0f, 1.0f, 1.0f, 1.0f } };
+            vertices[vOffset + 0] = { .Position = draw.TopLeft, .TexCoord = { 0, 0 }, .Tint = draw.Tint };
+            vertices[vOffset + 1] = { .Position = draw.TopRight, .TexCoord = { 1, 0 }, .Tint = draw.Tint };
+            vertices[vOffset + 2] = { .Position = draw.BottomRight, .TexCoord = { 1, 1 }, .Tint = draw.Tint };
+            vertices[vOffset + 3] = { .Position = draw.BottomLeft, .TexCoord = { 0, 1 }, .Tint = draw.Tint };
 
             indices[iOffset + 0] = 0 + vOffset;
             indices[iOffset + 1] = 1 + vOffset;

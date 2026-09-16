@@ -107,7 +107,7 @@ struct VSOutput_0
     thread VSOutput_0 output_1;
 
 
-    (&output_1)->Position_3 = (((float4(_S3.Position_2, 0.0, 1.0)) * (camera_2->Projection_0)));
+    (&output_1)->Position_3 = (((float4(_S3.Position_2, 0.0f, 1.0f)) * (camera_2->Projection_0)));
     (&output_1)->TexCoord_3 = _S3.TexCoord_2;
     (&output_1)->Tint_3 = _S3.Tint_2;
 
