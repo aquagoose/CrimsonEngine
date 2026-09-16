@@ -18,6 +18,7 @@ if (window.IsNull)
 }
 
 Renderer.Init(window);
+Console.WriteLine(Renderer.BackendName);
 
 bool alive = true;
 while (alive)

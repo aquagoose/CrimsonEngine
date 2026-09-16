@@ -17,6 +17,11 @@ public static class Renderer
     internal static RenderContext Context = null!;
 
     /// <summary>
+    /// Gets the name of the graphics backend associated with the renderer.
+    /// </summary>
+    public static string BackendName => SDL.GetGPUDeviceDriver(Context.Device);
+
+    /// <summary>
     /// Initialize the renderer.
     /// </summary>
     /// <param name="window">The SDL3 window to associate with the renderer.</param>
