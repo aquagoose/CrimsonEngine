@@ -70,6 +70,34 @@ namespace cge
                 { Vec4<T>::Dot(row3, col0), Vec4<T>::Dot(row3, col1), Vec4<T>::Dot(row3, col2), Vec4<T>::Dot(row3, col3) },
             };
         }
+
+        static Matrix Identity()
+        {
+            return {
+                Vec4<T>::UnitX(),
+                Vec4<T>::UnitY(),
+                Vec4<T>::UnitZ(),
+                Vec4<T>::UnitW(),
+            };
+        }
+
+        static Matrix Orthographic(T left, T right, T bottom, T top, T near, T far)
+        {
+            T rightPlusLeft = right + left;
+            T topPlusBottom = top + bottom;
+            T farPlusNear = far + near;
+
+            T rightMinusLeft = right - left;
+            T topMinusBottom = top - bottom;
+            T farMinusNear = far - near;
+
+            return {
+                Vec4<T>(2.0 / rightMinusLeft, 0, 0, 0),
+                Vec4<T>(0, 2.0 / topMinusBottom, 0, 0),
+                Vec4<T>(0, 0, -2.0 / farMinusNear, 0),
+                Vec4<T>(-(rightPlusLeft / rightMinusLeft), -(topPlusBottom / topMinusBottom), -(farPlusNear / farMinusNear), 1.0)
+            };
+        }
     };
 
     using Matrixi = Matrix<i32>;

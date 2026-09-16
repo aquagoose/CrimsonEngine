@@ -1,10 +1,11 @@
 #include "TextureBatcher.h"
 
-#include <cassert>
-#include <functional>
-
 #include "Core/BitUtils.h"
 #include "Graphics/Private/SDLUtils.h"
+#include "Math/Matrix.h"
+
+#include <cassert>
+#include <functional>
 
 namespace cge::Private
 {
@@ -235,22 +236,8 @@ namespace cge::Private
 
         SDL_EndGPUCopyPass(copyPass);
 
-        // todo matrix type
-        float left = 0;
-        float right = 1280;
-        float top = 0;
-        float bottom = 720;
-        float near = -1;
-        float far = 1;
-        float projMatrix[16]
-        {
-            (2.0f / (right - left)), 0, 0, 0,
-            0, (2.0f / (top - bottom)), 0, 0,
-            0, 0, (-2 / (far - near)), 0,
-            -((right + left) / (right - left)), -((top + bottom) / (top - bottom)), -((far + near) / (far - near)), 1
-        };
-
-        SDL_PushGPUVertexUniformData(cb, 0, projMatrix, 16 * sizeof(float));
+        Matrixf projection = Matrixf::Orthographic(0, 1280, 720, 0, -1, 1);
+        SDL_PushGPUVertexUniformData(cb, 0, &projection, 16 * sizeof(float));
 
         SDL_GPUColorTargetInfo colorTarget
         {
