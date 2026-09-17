@@ -16,6 +16,8 @@ public static class Renderer
 
     internal static RenderContext Context = null!;
 
+    // todo: Renderer.BackgroundColor
+
     /// <summary>
     /// Gets the name of the graphics backend associated with the renderer.
     /// </summary>
