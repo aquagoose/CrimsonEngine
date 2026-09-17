@@ -46,4 +46,37 @@ public static class Renderer
         Context.Dispose();
         IsInitialized = false;
     }
+
+    /// <summary>
+    /// Render the scene to the window.
+    /// </summary>
+    public static void Render()
+    {
+        Debug.Assert(IsInitialized, "The renderer has not been initialized!");
+
+        SDL.GPUCommandBuffer cb = SDL.AcquireGPUCommandBuffer(Context.Device).Check("Acquire command buffer");
+
+        SDL.WaitAndAcquireGPUSwapchainTexture(cb, Context.Window, out SDL.GPUTexture swapchainTexture, out _, out _)
+            .Check("Acquire swapchain texture");
+
+        // don't bother rendering if there is nothing to render to
+        if (swapchainTexture.IsNull)
+        {
+            SDL.CancelGPUCommandBuffer(cb);
+            return;
+        }
+
+        SDL.GPUColorTargetInfo colorTarget = new()
+        {
+            Texture = swapchainTexture,
+            ClearColor = new SDL.FColor(1.0f, 0.5f, 0.25f, 1.0f),
+            LoadOp = SDL.GPULoadOp.Clear,
+            StoreOp = SDL.GPUStoreOp.Store
+        };
+
+        SDL.GPURenderPass pass = SDL.BeginGPURenderPass(cb, [colorTarget], null).Check("Begin render pass");
+        SDL.EndGPURenderPass(pass);
+
+        SDL.SubmitGPUCommandBuffer(cb).Check("Submit command buffer");
+    }
 }

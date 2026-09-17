@@ -32,6 +32,8 @@ while (alive)
                 break;
         }
     }
+    
+    Renderer.Render();
 }
 
 Renderer.Free();
