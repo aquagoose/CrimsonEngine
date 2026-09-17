@@ -6,7 +6,7 @@ int main(int argc, char* argv[])
     if (!SDL_Init(SDL_INIT_VIDEO))
         CGE_FATAL("Failed to initialize SDL: {}", SDL_GetError());
 
-    SDL_Window* window = SDL_CreateWindow("Hello World Test", 1280, 720, SDL_WINDOW_RESIZABLE);
+    SDL_Window* window = SDL_CreateWindow("Hello World Test", 1280, 720, SDL_WINDOW_RESIZABLE | SDL_WINDOW_HIGH_PIXEL_DENSITY);
     if (!window)
         CGE_FATAL("Failed to create window: {}", SDL_GetError());
 

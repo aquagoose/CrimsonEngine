@@ -1,8 +1,5 @@
 #include "RenderContext.h"
 
-#include <cstring>
-#include <vulkan/vulkan.h>
-
 #include "SDLUtils.h"
 
 #include "Core/Logger.h"
@@ -10,28 +7,21 @@
 #include "Core/File.h"
 #include "Core/Path.h"
 
+#include <cstring>
+#include <SDL3_shadercross/SDL_shadercross.h>
+
 namespace cge::Private
 {
     RenderContext::RenderContext(SDL_Window* window) : Window(window)
     {
-        SDL_GPUVulkanOptions vulkanOptions
-        {
-            .vulkan_api_version = VK_API_VERSION_1_1,
-        };
-
         SDL_PropertiesID props = SDL_CreateProperties();
-        // always enable vulkan
-        SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_SHADERS_SPIRV_BOOLEAN, true);
-        SDL_SetPointerProperty(props, SDL_PROP_GPU_DEVICE_CREATE_VULKAN_OPTIONS_POINTER, &vulkanOptions);
 
-        // use d3d12 on windows
-#ifdef CGE_PLATFORM_WINDOWS
+#if defined(CGE_PLATFORM_WINDOWS) // use d3d12 on windows
         SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_SHADERS_DXIL_BOOLEAN, true);
-#endif
-
-        // use metal on apple platforms
-#ifdef CGE_PLATFORM_APPLE
+#elif defined(CGE_PLATFORM_APPLE) // use metal on apple platforms
         SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_SHADERS_MSL_BOOLEAN, true);
+#else // use vulkan on everything else
+        SDL_SetBooleanProperty(props, SDL_PROP_GPU_DEVICE_CREATE_SHADERS_SPIRV_BOOLEAN, true);
 #endif
 
 #ifndef NDEBUG
@@ -52,6 +42,8 @@ namespace cge::Private
         CGE_TRACE("Associating device with window.");
         CGE_SDL_CHECK(SDL_ClaimWindowForGPUDevice(Device, Window), "Claim window for device");
 
+        SDL_ShaderCross_Init();
+
         _transferBufferSize = TransferBufferInitialSize;
         _transferBufferOffset = 0;
         _transferBuffer = CreateTransferBuffer(SDL_GPU_TRANSFERBUFFERUSAGE_UPLOAD, _transferBufferSize);
@@ -66,7 +58,7 @@ namespace cge::Private
 
     SDL_GPUShader* RenderContext::CreateShader(ShaderStage stage, const std::string& name, const std::string& entryPoint, const ShaderInfo& info)
     {
-        SDL_GPUShaderFormat format = SDL_GetGPUShaderFormats(Device);
+        /*SDL_GPUShaderFormat format = SDL_GetGPUShaderFormats(Device);
         if ((format & SDL_GPU_SHADERFORMAT_SPIRV) != 0)
             format = SDL_GPU_SHADERFORMAT_SPIRV;
         else if ((format & SDL_GPU_SHADERFORMAT_DXIL) != 0)
@@ -121,6 +113,44 @@ namespace cge::Private
         SDL_GPUShader* shader = SDL_CreateGPUShader(Device, &shaderInfo);
         CGE_SDL_CHECK(shader, "Create shader");
 
+        return shader;*/
+
+        SDL_ShaderCross_ShaderStage shaderStage;
+        std::string tag;
+        switch (stage)
+        {
+            case ShaderStage::Vertex:
+                shaderStage = SDL_SHADERCROSS_SHADERSTAGE_VERTEX;
+                tag = "v";
+                break;
+            case ShaderStage::Pixel:
+                shaderStage = SDL_SHADERCROSS_SHADERSTAGE_FRAGMENT;
+                tag = "p";
+                break;
+        }
+
+        auto fullPath = Path::Combine(CGE_CONTENT_DIR, "Shaders", std::format("{}_{}.spv", name, tag));
+        auto data = File::ReadBytes(fullPath);
+
+        SDL_ShaderCross_SPIRV_Info spirvInfo
+        {
+            .bytecode = data.data(),
+            .bytecode_size = data.size(),
+            .entrypoint = entryPoint.c_str(),
+            .shader_stage = shaderStage,
+        };
+
+        SDL_ShaderCross_GraphicsShaderResourceInfo resources
+        {
+            .num_samplers = info.NumSamplers,
+            .num_storage_textures = info.NumStorageTextures,
+            .num_storage_buffers = info.NumStorageBuffers,
+            .num_uniform_buffers = info.NumUniforms
+        };
+
+        CGE_TRACE("Compiling shader.");
+        SDL_GPUShader* shader = SDL_ShaderCross_CompileGraphicsShaderFromSPIRV(Device, &spirvInfo, &resources, 0);
+        CGE_SDL_CHECK(shader, "Compile shader from SPIR-V");
         return shader;
     }
 

@@ -1,4 +1,4 @@
-#include "Core.slang"
+#include "Core.hlsli"
 
 struct Vertex
 {
@@ -14,10 +14,9 @@ struct VSOutput
     float4 Tint:     COLOR0;
 };
 
-VertexBlock<Camera> camera;
-PixelSampler2D sprite;
+VertexUniform(Camera, camera, 0);
+PixelSampler2D(sprite, 0);
 
-[shader("vertex")]
 VSOutput VSMain(const in Vertex input)
 {
     VSOutput output;
@@ -29,8 +28,7 @@ VSOutput VSMain(const in Vertex input)
     return output;
 }
 
-[shader("pixel")]
-float4 PSMain(const in VSOutput input)
+float4 PSMain(const in VSOutput input) : SV_Target0
 {
-    return sprite.Sample(input.TexCoord) * input.Tint;
+    return sprite.Sample(spriteSampler, input.TexCoord) * input.Tint;
 }

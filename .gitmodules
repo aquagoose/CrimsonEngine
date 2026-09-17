@@ -4,3 +4,6 @@
 [submodule "Engine/External/stb"]
 	path = Engine/External/stb
 	url = https://github.com/aquagoose/stb
+[submodule "Engine/External/SDL_shadercross"]
+	path = Engine/External/SDL_shadercross
+	url = https://github.com/libsdl-org/SDL_shadercross
