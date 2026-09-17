@@ -32,7 +32,7 @@ while (alive)
                 break;
         }
     }
-    
+
     Renderer.Render();
 }
 

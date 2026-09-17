@@ -6,7 +6,7 @@ namespace Crimson.Graphics;
 /// <summary>
 /// A 2-dimensional image containing pixel data.
 /// </summary>
-public class Bitmap
+public sealed class Bitmap
 {
     /// <summary>
     /// The pixel data in the format defined by <see cref="Format"/>.

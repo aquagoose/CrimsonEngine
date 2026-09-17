@@ -37,4 +37,10 @@ public struct Size<T> where T : INumber<T>
         Width = wh;
         Height = wh;
     }
+
+    /// <summary>
+    /// Gets this size as a string, in the format {Width}x{Height}
+    /// </summary>
+    public override string ToString()
+        => $"{Width}x{Height}";
 }
