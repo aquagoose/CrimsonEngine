@@ -26,4 +26,7 @@ internal static class SDLUtils
 
         return handle;
     }
+
+    public static uint CalculateNumMips(uint width, uint height)
+        => (uint) double.Floor(double.Log2(double.Max(width, height))) + 1;
 }

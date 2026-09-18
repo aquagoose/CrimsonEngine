@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using Crimson.Core;
 using Crimson.Graphics.Utils;
 using piko.SDL3;
 
@@ -67,6 +68,13 @@ public static class Renderer
             SDL.CancelGPUCommandBuffer(cb);
             return;
         }
+
+        foreach (SDL.GPUTexture texture in Context.MipmapQueue)
+        {
+            Logger.Trace($"Generating mipmaps for texture {texture.Handle}.");
+            SDL.GenerateMipmapsForGPUTexture(cb, texture);
+        }
+        Context.MipmapQueue.Clear();
 
         SDL.GPUColorTargetInfo colorTarget = new()
         {

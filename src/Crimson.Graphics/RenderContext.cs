@@ -20,6 +20,8 @@ internal sealed class RenderContext : IDisposable
     public readonly SDL.Window Window;
     public readonly SDL.GPUDevice Device;
 
+    public readonly HashSet<SDL.GPUTexture> MipmapQueue;
+
     public RenderContext(SDL.Window window)
     {
         Window = window;
@@ -50,6 +52,8 @@ internal sealed class RenderContext : IDisposable
 
         Logger.Trace("Claiming window for device.");
         SDL.ClaimWindowForGPUDevice(Device, Window).Check("Claim window for device");
+
+        MipmapQueue = [];
 
         _transferBufferSize = InitialTranferBufferSize;
         _transferBufferOffset = 0;

@@ -16,6 +16,7 @@ public sealed class Texture : IDisposable
     public bool IsDisposed { get; private set; }
 
     private readonly RenderContext _context;
+    private readonly bool _generateMips;
 
     internal readonly SDL.GPUTexture TextureHandle;
 
@@ -41,6 +42,7 @@ public sealed class Texture : IDisposable
     public unsafe Texture(byte[]? data, Size<uint> size, PixelFormat format, bool generateMips = true)
     {
         _context = Renderer.Context;
+        _generateMips = generateMips;
         Size = size;
         Format = format;
 
@@ -50,6 +52,14 @@ public sealed class Texture : IDisposable
             _ => throw new ArgumentOutOfRangeException(nameof(format), format, null)
         };
 
+        uint mipLevels = 1;
+        SDL.GPUTextureUsageFlags usage = SDL.GPUTextureUsageFlags.Sampler;
+        if (generateMips)
+        {
+            mipLevels = SDLUtils.CalculateNumMips(size.Width, size.Height);
+            usage |= SDL.GPUTextureUsageFlags.ColorTarget;
+        }
+
         SDL.GPUTextureCreateInfo textureInfo = new()
         {
             Type = SDL.GPUTextureType.Type2d,
@@ -57,8 +67,8 @@ public sealed class Texture : IDisposable
             Width = size.Width,
             Height = size.Height,
             LayerCountOrDepth = 1,
-            NumLevels = 1, // todo generate mips
-            Usage = SDL.GPUTextureUsageFlags.Sampler,
+            NumLevels = mipLevels,
+            Usage = usage,
             SampleCount = SDL.GPUSampleCount.Count1
         };
 
@@ -70,6 +80,9 @@ public sealed class Texture : IDisposable
 
         fixed (byte* pData = data)
             _context.CopyDataToTexture(TextureHandle, pData, 0, 0, size, format);
+
+        if (generateMips)
+            _context.MipmapQueue.Add(TextureHandle);
     }
 
     /// <summary>
