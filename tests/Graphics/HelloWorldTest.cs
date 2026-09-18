@@ -20,6 +20,8 @@ if (window.IsNull)
 Renderer.Init(window);
 Console.WriteLine(Renderer.BackendName);
 
+Texture texture = new Texture("Content/DEBUG.png");
+
 bool alive = true;
 while (alive)
 {
@@ -36,6 +38,7 @@ while (alive)
     Renderer.Render();
 }
 
+texture.Dispose();
 Renderer.Free();
 SDL.DestroyWindow(window);
 SDL.Quit();

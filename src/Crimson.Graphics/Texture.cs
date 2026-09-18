@@ -64,6 +64,12 @@ public sealed class Texture : IDisposable
 
         Logger.Trace($"Creating {size} texture.");
         TextureHandle = SDL.CreateGPUTexture(_context.Device, &textureInfo).Check("Create texture");
+
+        if (data == null)
+            return;
+
+        fixed (byte* pData = data)
+            _context.CopyDataToTexture(TextureHandle, pData, 0, 0, size, format);
     }
 
     /// <summary>
