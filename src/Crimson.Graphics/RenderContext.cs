@@ -60,6 +60,18 @@ internal sealed class RenderContext : IDisposable
         _transferBuffer = CreateTransferBuffer(SDL.GPUTransferBufferUsage.Upload, _transferBufferSize);
     }
 
+    public unsafe SDL.GPUBuffer CreateBuffer(SDL.GPUBufferUsageFlags usage, uint size)
+    {
+        SDL.GPUBufferCreateInfo bufferInfo = new()
+        {
+            Usage = usage,
+            Size = size
+        };
+
+        Logger.Trace($"Creating {size / 1024}KiB {usage} buffer.");
+        return SDL.CreateGPUBuffer(Device, &bufferInfo).Check("Create buffer");
+    }
+
     public unsafe SDL.GPUTransferBuffer CreateTransferBuffer(SDL.GPUTransferBufferUsage usage, uint size)
     {
         SDL.GPUTransferBufferCreateInfo bufferInfo = new()
