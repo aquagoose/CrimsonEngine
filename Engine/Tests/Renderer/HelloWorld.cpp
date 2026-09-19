@@ -1,6 +1,8 @@
 #include <Core/Logger.h>
 #include <Graphics/Renderer.h>
 
+using namespace cge;
+
 int main(int argc, char* argv[])
 {
     if (!SDL_Init(SDL_INIT_VIDEO))
@@ -10,7 +12,7 @@ int main(int argc, char* argv[])
     if (!window)
         CGE_FATAL("Failed to create window: {}", SDL_GetError());
 
-    auto renderer = new cge::Renderer(window);
+    auto renderer = new Renderer(window);
     float value = 0;
     auto texture = renderer->CreateTexture("Content/DEBUG.png");
     auto texture2 = renderer->CreateTexture("Content/Bagel.png");
@@ -27,6 +29,9 @@ int main(int argc, char* argv[])
                 case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
                     alive = false;
                     break;
+                case SDL_EVENT_WINDOW_RESIZED:
+                    renderer->Resize({ static_cast<u32>(event.window.data1), static_cast<u32>(event.window.data2) });
+                    break;
             }
         }
 
@@ -39,13 +44,13 @@ int main(int argc, char* argv[])
         for (int i = 0; i < 10; i++)
         {
             float v = std::sin(value + i) * 100;
-            renderer->DrawImage(*texture, cge::Vec2f(v, static_cast<float>(i * 50)));
+            renderer->DrawImage(*texture, Vec2f(v, static_cast<float>(i * 50)));
         }
 
         for (int i = 0; i < 10; i++)
         {
             float v = std::cos(value + i) * 100;
-            renderer->DrawImage(*texture2, cge::Vec2f(600 - v, i * 50), cge::Color::Aquamarine());
+            renderer->DrawImage(*texture2, Vec2f(600 - v, i * 50), Color::Aquamarine());
         }
 
         renderer->Render();

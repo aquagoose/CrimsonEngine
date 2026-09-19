@@ -41,5 +41,7 @@ namespace cge
          * Process and render all geometry to the window.
          */
         void Render();
+
+        void Resize(const Sizeu& size);
     };
 }

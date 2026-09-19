@@ -134,4 +134,9 @@ namespace cge
 
         CGE_SDL_CHECK(SDL_SubmitGPUCommandBuffer(cb), "Submit command buffer");
     }
+
+    void Renderer::Resize(const Sizeu& size)
+    {
+        _size = size;
+    }
 }
