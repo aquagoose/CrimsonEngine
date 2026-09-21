@@ -2,14 +2,13 @@
 
 #include "Core/BitUtils.h"
 #include "Graphics/Private/SDLUtils.h"
-#include "Math/Matrix.h"
 
 #include <cassert>
 #include <functional>
 
 namespace cge::Private
 {
-    TextureBatcher::TextureBatcher(RenderContext& context, SDL_GPUTextureFormat outFormat) : _context(context)
+    TextureBatcher::TextureBatcher(RenderContext& context, SDL_GPUTextureFormat targetFormat) : _context(context)
     {
         _maxDraws = InitialMaxDraws;
         _vertexBuffer = _context.CreateBuffer(SDL_GPU_BUFFERUSAGE_VERTEX, _maxDraws * NumVertices * sizeof(Vertex));
@@ -51,7 +50,7 @@ namespace cge::Private
 
         SDL_GPUColorTargetDescription targetDesc
         {
-            .format = outFormat,
+            .format = targetFormat,
             .blend_state = SDLUtils::PremultipliedBlend
         };
 

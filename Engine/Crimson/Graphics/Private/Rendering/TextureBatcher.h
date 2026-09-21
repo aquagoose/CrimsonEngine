@@ -58,7 +58,7 @@ namespace cge::Private
         std::vector<Batch> _batches;
 
     public:
-        TextureBatcher(RenderContext& context, SDL_GPUTextureFormat outFormat);
+        TextureBatcher(RenderContext& context, SDL_GPUTextureFormat targetFormat);
         ~TextureBatcher();
 
         void Clear();

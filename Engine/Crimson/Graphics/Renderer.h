@@ -1,7 +1,7 @@
 #pragma once
 
 #include "Private/RenderContext.h"
-#include "Private/Renderers/TextureBatcher.h"
+#include "Private/Rendering/TextureBatcher.h"
 
 #include "Texture.h"
 #include "Bitmap.h"
