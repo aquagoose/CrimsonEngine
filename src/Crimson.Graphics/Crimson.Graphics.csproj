@@ -14,5 +14,9 @@
         <ProjectReference Include="..\Crimson.Core\Crimson.Core.csproj" />
         <ProjectReference Include="..\Crimson.Math\Crimson.Math.csproj" />
     </ItemGroup>
-  
+
+    <ItemGroup>
+        <EmbeddedResource Include="Shaders/**/*.spv" />
+    </ItemGroup>
+
 </Project>

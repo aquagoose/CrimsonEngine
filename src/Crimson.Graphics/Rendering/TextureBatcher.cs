@@ -1,8 +1,10 @@
+using System.Numerics;
 using piko.SDL3;
+using Index = uint;
 
 namespace Crimson.Graphics.Rendering;
 
-internal sealed class TextureBatcher : IDisposable
+internal sealed unsafe class TextureBatcher : IDisposable
 {
     /// <summary>
     /// The initial maximum number of draws, before expansion.
@@ -29,10 +31,22 @@ internal sealed class TextureBatcher : IDisposable
     {
         _context = context;
         _maxDraws = InitialMaxDrawCount;
+
+        _vertexBuffer = _context.CreateBuffer(SDL.GPUBufferUsageFlags.Vertex, InitialMaxDrawCount * NumVertices * (uint) sizeof(Vertex));
+        _indexBuffer = _context.CreateBuffer(SDL.GPUBufferUsageFlags.Index, InitialMaxDrawCount * NumIndices * sizeof(Index));
+
+
     }
 
     public void Dispose()
     {
 
+    }
+
+    private readonly struct Vertex(Vector2 position, Vector2 texCoord, Vector4 tint)
+    {
+        public readonly Vector2 Position = position;
+        public readonly Vector2 TexCoord = texCoord;
+        public readonly Vector4 Tint = tint; // todo color struct
     }
 }
