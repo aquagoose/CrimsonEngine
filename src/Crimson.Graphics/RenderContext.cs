@@ -1,8 +1,11 @@
+using System.Reflection;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Crimson.Core;
 using Crimson.Graphics.Utils;
 using Crimson.Math;
 using piko.SDL3;
+using piko.SDL3.ShaderCross;
 
 namespace Crimson.Graphics;
 
@@ -60,6 +63,87 @@ internal sealed class RenderContext : IDisposable
         _transferBuffer = CreateTransferBuffer(SDL.GPUTransferBufferUsage.Upload, _transferBufferSize);
     }
 
+    public unsafe SDL.GPUShader CreateShader(SDL.GPUShaderStage stage, string shader)
+    {
+        SDL.GPUShaderFormat format = SDL.GetGPUShaderFormats(Device);
+        // sometimes multiple formats can be returned, this ensures that only one format
+        // is set at a time as CreateGPUShader only allows for one format
+        if ((format & SDL.GPUShaderFormat.Spirv) != 0)
+            format = SDL.GPUShaderFormat.Spirv;
+        else if ((format & SDL.GPUShaderFormat.Dxil) != 0)
+            format = SDL.GPUShaderFormat.Dxil;
+        else if ((format & SDL.GPUShaderFormat.Msl) != 0)
+            format = SDL.GPUShaderFormat.Msl;
+        else
+            throw new PlatformNotSupportedException($"Unsupported shader format(s) {format}");
+
+        string resourceName = $"Crimson.Graphics.{shader.Replace('/', '.')}.spv";
+        byte[] spirv = Resource.Load(resourceName, Assembly.GetExecutingAssembly());
+
+        ReadOnlySpan<byte> entryPoint = stage switch
+        {
+            SDL.GPUShaderStage.Vertex => "VSMain"u8,
+            SDL.GPUShaderStage.Fragment => "PSMain"u8,
+            _ => throw new ArgumentOutOfRangeException(nameof(stage), stage, null)
+        };
+
+        SDLShaderCross.GraphicsShaderMetadata* metadata;
+
+        fixed (byte* pSpirv = spirv)
+            metadata = SDLShaderCross.ReflectGraphicsSPIRV(pSpirv, (nuint) spirv.Length, 0);
+        SDLUtils.Check((nint) metadata, "Reflect SPIRV");
+        SDLShaderCross.GraphicsShaderResourceInfo resources = metadata->ResourceInfo;
+
+        try
+        {
+            // no need to run shadercross if we're already on spirv
+            // shadercross internally just passes it directly to CreateGPUShader and doesn't do anything,
+            // but it saves an extra method call. meh yknow it makes no difference but whatever
+            if (format == SDL.GPUShaderFormat.Spirv)
+            {
+                fixed (byte* pSpirv = spirv)
+                fixed (byte* pEntryPoint = entryPoint)
+                {
+                    SDL.GPUShaderCreateInfo shaderInfo = new()
+                    {
+                        Code = pSpirv,
+                        CodeSize = (nuint) spirv.Length,
+                        Entrypoint = (sbyte*) pEntryPoint,
+                        Stage = stage,
+                        Format = format,
+                        NumSamplers = resources.NumSamplers,
+                        NumUniformBuffers = resources.NumUniformBuffers,
+                        NumStorageTextures = resources.NumStorageTextures,
+                        NumStorageBuffers = resources.NumStorageTextures
+                    };
+
+                    Logger.Trace($"Creating shader \"{shader}\"");
+                    return SDL.CreateGPUShader(Device, &shaderInfo).Check("Create shader");
+                }
+            }
+
+            fixed (byte* pSpirv = spirv)
+            fixed (byte* pEntryPoint = entryPoint)
+            {
+                SDLShaderCross.SPIRVInfo spirvInfo = new()
+                {
+                    Bytecode = pSpirv,
+                    BytecodeSize = (nuint) spirv.Length,
+                    Entrypoint = (sbyte*) pEntryPoint,
+                    ShaderStage = (SDLShaderCross.ShaderStage) stage
+                };
+
+                Logger.Trace($"Creating shader \"{shader}\"");
+                return SDLShaderCross.CompileGraphicsShaderFromSPIRV(Device, &spirvInfo, &resources, 0)
+                    .Check("Compile shader from spirv");
+            }
+        }
+        finally
+        {
+            NativeMemory.Free(metadata);
+        }
+    }
+    
     public unsafe SDL.GPUBuffer CreateBuffer(SDL.GPUBufferUsageFlags usage, uint size)
     {
         SDL.GPUBufferCreateInfo bufferInfo = new()
