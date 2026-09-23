@@ -179,7 +179,7 @@ internal sealed class RenderContext : IDisposable
     {
         if (size >= _transferBufferSize)
         {
-            Logger.Trace(
+            Logger.Debug(
                 $"Requested upload size ({size / 1024}KiB) is larger than the transfer buffer size ({_transferBufferSize / 1024}KiB). It will be resized.");
             // ensure the buffer can hold the data, then round to the next power of 2 so there's some wiggle room.
             _transferBufferSize = BitUtils.RoundToNextPowerOf2(size);

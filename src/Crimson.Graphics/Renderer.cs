@@ -69,6 +69,12 @@ public static class Renderer
         IsInitialized = false;
     }
 
+    /// <summary>
+    /// Draw a 2D image.
+    /// </summary>
+    /// <param name="texture">The <see cref="Texture"/> to use as the image.</param>
+    /// <param name="position">The position, in pixels, to draw at.</param>
+    /// <remarks>The origin point is the top left of the texture.</remarks>
     public static void DrawImage(Texture texture, Vector2 position)
     {
         Debug.Assert(IsInitialized, "The renderer has not been initialized!");
@@ -131,6 +137,10 @@ public static class Renderer
         SDL.SubmitGPUCommandBuffer(cb).Check("Submit command buffer");
     }
 
+    /// <summary>
+    /// Resize the <see cref="Renderer"/>.
+    /// </summary>
+    /// <param name="newSize">The new size, in pixels.</param>
     public static void Resize(in Size<uint> newSize)
     {
         Debug.Assert(IsInitialized, "The renderer has not been initialized!");

@@ -160,6 +160,18 @@ internal sealed unsafe class TextureBatcher : IDisposable
         if (draws.Length == 0) // don't even bother
             return;
 
+        if (draws.Length > _maxDraws)
+        {
+            Logger.Debug(
+                $"Draw count ({draws.Length}) is larger than the maximum draw count ({_maxDraws})! The buffers will be resized.");
+            _maxDraws = BitUtils.RoundToNextPowerOf2((uint) draws.Length);
+            SDL.ReleaseGPUBuffer(_context.Device, _vertexBuffer);
+            SDL.ReleaseGPUBuffer(_context.Device, _indexBuffer);
+            _vertexBuffer = _context.CreateBuffer(SDL.GPUBufferUsageFlags.Vertex,
+                _maxDraws * NumVertices * (uint) sizeof(Vertex));
+            _indexBuffer = _context.CreateBuffer(SDL.GPUBufferUsageFlags.Index, _maxDraws * NumIndices * sizeof(Index));
+        }
+
         uint totalVerticesSize = (uint) draws.Length * NumVertices * (uint) sizeof(Vertex);
         uint totalIndicesSize = (uint) draws.Length * NumIndices * sizeof(Index);
         uint totalSize = totalVerticesSize + totalIndicesSize;
