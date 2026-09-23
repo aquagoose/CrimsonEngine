@@ -1,4 +1,7 @@
+using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using Crimson.Core;
 using Crimson.Graphics.Utils;
 using piko.SDL3;
@@ -38,6 +41,7 @@ internal sealed unsafe class TextureBatcher : IDisposable
     {
         _context = context;
         _draws = [];
+        _batches = [];
         
         _maxDraws = InitialMaxDrawCount;
         _vertexBuffer = _context.CreateBuffer(SDL.GPUBufferUsageFlags.Vertex, InitialMaxDrawCount * NumVertices * (uint) sizeof(Vertex));
@@ -136,14 +140,145 @@ internal sealed unsafe class TextureBatcher : IDisposable
         _tempSampler = SDL.CreateGPUSampler(_context.Device, &samplerInfo).Check("Create sampler");
     }
 
+    public void Clear()
+    {
+        _draws.Clear();
+        _batches.Clear();
+    }
+
     public void AddToBatch(ref readonly Draw draw)
     {
         _draws.Add(draw);
     }
 
-    public void Render(SDL.GPUCommandBuffer cb, SDL.GPUTexture colorTarget)
+    public void Render(SDL.GPUCommandBuffer cb, SDL.GPUTexture colorTarget, ref readonly Camera camera, ref bool hasCleared)
     {
+        // todo a lot of this could be moved to a compute shader
+        #region Batching
         
+        ReadOnlySpan<Draw> draws = CollectionsMarshal.AsSpan(_draws);
+        if (draws.Length == 0) // don't even bother
+            return;
+
+        uint totalVerticesSize = (uint) draws.Length * NumVertices * (uint) sizeof(Vertex);
+        uint totalIndicesSize = (uint) draws.Length * NumIndices * sizeof(Index);
+        uint totalSize = totalVerticesSize + totalIndicesSize;
+
+        SDL.GPUTransferBuffer transBuffer = _context.GetUploadBuffer(totalSize, out uint offset, out bool cycle);
+        nint mapped = SDL.MapGPUTransferBuffer(_context.Device, transBuffer, cycle).Check("Map transfer buffer");
+
+        Vertex* vertices = (Vertex*) (mapped + offset);
+        Index* indices = (Index*) (mapped + offset + totalVerticesSize);
+
+        _batches.Clear(); // ensure the batches are clear before regenerating new batches
+        Texture? currentTexture = null;
+        uint previousBatchOffset = 0;
+        uint currentDraw;
+        for (currentDraw = 0; currentDraw < draws.Length; currentDraw++)
+        {
+            ref readonly Draw draw = ref draws[(int) currentDraw];
+
+            if (draw.Texture != currentTexture && currentTexture != null)
+            {
+                _batches.Add(new Batch(currentTexture, previousBatchOffset, currentDraw - previousBatchOffset));
+                previousBatchOffset = currentDraw;
+            }
+
+            currentTexture = draw.Texture;
+            
+            uint vOffset = currentDraw * NumVertices;
+            uint iOffset = currentDraw * NumIndices;
+
+            vertices[vOffset + 0] = new Vertex(draw.TopLeft, new Vector2(0, 0), draw.Tint);
+            vertices[vOffset + 1] = new Vertex(draw.TopRight, new Vector2(1, 0), draw.Tint);
+            vertices[vOffset + 2] = new Vertex(draw.BottomRight, new Vector2(1, 1), draw.Tint);
+            vertices[vOffset + 3] = new Vertex(draw.BottomLeft, new Vector2(0, 1), draw.Tint);
+
+            indices[iOffset + 0] = 0 + vOffset;
+            indices[iOffset + 1] = 1 + vOffset;
+            indices[iOffset + 2] = 3 + vOffset;
+            indices[iOffset + 3] = 1 + vOffset;
+            indices[iOffset + 4] = 2 + vOffset;
+            indices[iOffset + 5] = 3 + vOffset;
+        }
+        
+        Debug.Assert(currentTexture != null);
+        Debug.Assert(currentDraw != 0);
+        _batches.Add(new Batch(currentTexture, previousBatchOffset, currentDraw - previousBatchOffset));
+        
+        SDL.UnmapGPUTransferBuffer(_context.Device, transBuffer);
+
+        SDL.GPUCopyPass copyPass = SDL.BeginGPUCopyPass(cb).Check("Begin copy pass");
+
+        SDL.GPUTransferBufferLocation vertSrc = new()
+        {
+            TransferBuffer = transBuffer,
+            Offset = offset
+        };
+
+        SDL.GPUBufferRegion vertDest = new()
+        {
+            Buffer = _vertexBuffer,
+            Offset = 0,
+            Size = totalVerticesSize
+        };
+        
+        SDL.UploadToGPUBuffer(copyPass, &vertSrc, &vertDest, false);
+
+        SDL.GPUTransferBufferLocation indexSrc = new()
+        {
+            TransferBuffer = transBuffer,
+            Offset = offset + totalVerticesSize
+        };
+
+        SDL.GPUBufferRegion indexDest = new()
+        {
+            Buffer = _indexBuffer,
+            Offset = 0,
+            Size = totalIndicesSize
+        };
+        
+        SDL.UploadToGPUBuffer(copyPass, &indexSrc, &indexDest, false);
+        
+        SDL.EndGPUCopyPass(copyPass);
+        
+        #endregion
+
+        #region Drawing
+        
+        // 2 * sizeof(Matrix4x4) = 128
+        // the shader has its own camera struct that only wants the matrices, so we only need to pass in 2 matrices.
+        fixed (Camera* cam = &camera)
+            SDL.PushGPUVertexUniformData(cb, 0, (nint) cam, 128);
+
+        SDL.GPUColorTargetInfo target = new()
+        {
+            Texture = colorTarget,
+            ClearColor = new SDL.FColor(0.0f, 0.0f, 0.0f, 1.0f),
+            LoadOp = hasCleared ? SDL.GPULoadOp.Load : SDL.GPULoadOp.Clear,
+            StoreOp = SDL.GPUStoreOp.Store
+        };
+
+        SDL.GPURenderPass renderPass = SDL.BeginGPURenderPass(cb, &target, 1, null).Check("Begin render pass");
+
+        SDL.BindGPUGraphicsPipeline(renderPass, _pipeline);
+        SDL.BindGPUVertexBuffer(renderPass, 0, _vertexBuffer);
+        SDL.BindGPUIndexBuffer(renderPass, _indexBuffer, SDL.GPUIndexElementSize.Size32bit);
+        
+        ReadOnlySpan<Batch> batches = CollectionsMarshal.AsSpan(_batches);
+        for (int i = 0; i < batches.Length; i++)
+        {
+            ref readonly Batch batch = ref batches[i];
+            SDL.BindGPUFragmentTextures(renderPass, 0, [batch.Texture], _tempSampler);
+            SDL.DrawGPUIndexedPrimitives(renderPass, batch.Size * NumIndices, 1, batch.Offset * NumIndices, 0, 0);
+        }
+        
+        SDL.EndGPURenderPass(renderPass);
+        
+        #endregion
+
+        // will always clear if the value is false so we can just set it to true
+        hasCleared = true;
     }
 
     public void Dispose()

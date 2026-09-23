@@ -1,3 +1,4 @@
+using System.Runtime.CompilerServices;
 using piko.Core;
 using piko.SDL3;
 
@@ -40,4 +41,44 @@ internal static class SDLUtils
 
     public static uint CalculateNumMips(uint width, uint height)
         => (uint) double.Floor(double.Log2(double.Max(width, height))) + 1;
+
+    extension(SDL)
+    {
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe void BindGPUVertexBuffer(SDL.GPURenderPass renderPass, uint slot, SDL.GPUBuffer buffer,
+            uint offset = 0)
+        {
+            SDL.GPUBufferBinding binding = new()
+            {
+                Buffer = buffer,
+                Offset = offset
+            };
+            
+            SDL.BindGPUVertexBuffers(renderPass, slot, &binding, 1);
+        }
+
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe void BindGPUIndexBuffer(SDL.GPURenderPass renderPass, SDL.GPUBuffer buffer,
+            SDL.GPUIndexElementSize elementSize, uint offset = 0)
+        {
+            SDL.GPUBufferBinding binding = new()
+            {
+                Buffer = buffer,
+                Offset = offset
+            };
+            
+            SDL.BindGPUIndexBuffer(renderPass, &binding, elementSize);
+        }
+
+        // todo sampler should be integrated into texture
+        [MethodImpl(MethodImplOptions.AggressiveInlining)]
+        public static unsafe void BindGPUFragmentTextures(SDL.GPURenderPass pass, uint firstSlot, ReadOnlySpan<Texture> textures, SDL.GPUSampler temporarySampler)
+        {
+            SDL.GPUTextureSamplerBinding* bindings = stackalloc SDL.GPUTextureSamplerBinding[textures.Length];
+            for (int i = 0; i < textures.Length; i++)
+                bindings[i] = new SDL.GPUTextureSamplerBinding(textures[i].TextureHandle, temporarySampler);
+            
+            SDL.BindGPUFragmentSamplers(pass, firstSlot, bindings, (uint) textures.Length);
+        }
+    }
 }
