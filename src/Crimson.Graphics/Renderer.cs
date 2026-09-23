@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using Crimson.Core;
+using Crimson.Graphics.Rendering;
 using Crimson.Graphics.Utils;
 using piko.SDL3;
 
@@ -15,6 +16,8 @@ public static class Renderer
     /// </summary>
     public static bool IsInitialized { get; private set; }
 
+    private static TextureBatcher _uiBatcher = null!;
+    
     internal static RenderContext Context = null!;
 
     // todo: Renderer.BackgroundColor
@@ -33,6 +36,9 @@ public static class Renderer
         Debug.Assert(!IsInitialized, "The renderer has already been initialized!");
         Context = new RenderContext(window);
 
+        SDL.GPUTextureFormat format = SDL.GetGPUSwapchainTextureFormat(Context.Device, Context.Window);
+        _uiBatcher = new TextureBatcher(Context, format);
+        
         IsInitialized = true;
     }
 
@@ -43,9 +49,7 @@ public static class Renderer
     {
         Debug.Assert(IsInitialized, "The renderer has not been initialized!");
         SDL.WaitForGPUIdle(Context.Device).Check("Wait for idle");
-
-        // fancy disposal stuff to go here
-
+        _uiBatcher.Dispose();
         Context.Dispose();
         IsInitialized = false;
     }

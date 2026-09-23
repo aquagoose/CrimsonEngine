@@ -77,7 +77,14 @@ internal sealed class RenderContext : IDisposable
         else
             throw new PlatformNotSupportedException($"Unsupported shader format(s) {format}");
 
-        string resourceName = $"Crimson.Graphics.{shader.Replace('/', '.')}.spv";
+        string fileSuffix = stage switch
+        {
+            SDL.GPUShaderStage.Vertex => "_v",
+            SDL.GPUShaderStage.Fragment => "_p",
+            _ => throw new ArgumentOutOfRangeException(nameof(stage), stage, null)
+        };
+        
+        string resourceName = $"Crimson.Graphics.Shaders.{shader.Replace('/', '.')}{fileSuffix}.spv";
         byte[] spirv = Resource.Load(resourceName, Assembly.GetExecutingAssembly());
 
         ReadOnlySpan<byte> entryPoint = stage switch

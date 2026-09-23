@@ -5,6 +5,17 @@ namespace Crimson.Graphics.Utils;
 
 internal static class SDLUtils
 {
+    public static SDL.GPUColorTargetBlendState NonPremultipliedBlend => new SDL.GPUColorTargetBlendState
+    {
+        EnableBlend = true,
+        SrcColorBlendfactor = SDL.GPUBlendFactor.SrcAlpha,
+        DstColorBlendfactor = SDL.GPUBlendFactor.OneMinusDstAlpha,
+        ColorBlendOp = SDL.GPUBlendOp.Add,
+        SrcAlphaBlendfactor = SDL.GPUBlendFactor.SrcAlpha,
+        DstAlphaBlendfactor = SDL.GPUBlendFactor.OneMinusDstAlpha,
+        AlphaBlendOp = SDL.GPUBlendOp.Add
+    };
+    
     public static void Check(this bool b, string operation)
     {
         if (!b)
