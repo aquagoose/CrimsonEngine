@@ -2,6 +2,7 @@
 using System.Numerics;
 using Crimson.Core;
 using Crimson.Graphics.Rendering;
+using Crimson.Graphics.Rendering.Structs;
 using Crimson.Graphics.Utils;
 using Crimson.Math;
 using piko.SDL3;
@@ -24,7 +25,10 @@ public static class Renderer
     
     internal static RenderContext Context = null!;
 
-    // todo: Renderer.BackgroundColor
+    /// <summary>
+    /// Get or set the background color which is used when a skybox is not present.
+    /// </summary>
+    public static Color BackgroundColor;
 
     /// <summary>
     /// Gets the render size in pixels.
@@ -43,6 +47,8 @@ public static class Renderer
     public static void Init(SDL.Window window)
     {
         Debug.Assert(!IsInitialized, "The renderer has already been initialized!");
+        BackgroundColor = Color.Black;
+        
         Context = new RenderContext(window);
 
         SDL.GetWindowSizeInPixels(window, out int w, out int h);
@@ -126,14 +132,14 @@ public static class Renderer
         }
         Context.MipmapQueue.Clear();
 
-        bool hasCleared = false;
+        ClearInfo clearInfo = new ClearInfo(BackgroundColor, false);
 
         Camera uiCamera = new()
         {
             Projection = Matrix4x4.CreateOrthographicOffCenter(0, _renderSize.Width, _renderSize.Height, 0, -1, 1),
             View = Matrix4x4.Identity
         };
-        _uiBatcher.Render(cb, swapchainTexture, in uiCamera, ref hasCleared);
+        _uiBatcher.Render(cb, swapchainTexture, in uiCamera, ref clearInfo);
 
         SDL.SubmitGPUCommandBuffer(cb).Check("Submit command buffer");
     }

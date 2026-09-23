@@ -3,6 +3,7 @@ using System.Numerics;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Crimson.Core;
+using Crimson.Graphics.Rendering.Structs;
 using Crimson.Graphics.Utils;
 using piko.SDL3;
 using Index = uint;
@@ -151,7 +152,7 @@ internal sealed unsafe class TextureBatcher : IDisposable
         _draws.Add(draw);
     }
 
-    public void Render(SDL.GPUCommandBuffer cb, SDL.GPUTexture colorTarget, ref readonly Camera camera, ref bool hasCleared)
+    public void Render(SDL.GPUCommandBuffer cb, SDL.GPUTexture colorTarget, ref readonly Camera camera, ref ClearInfo clearInfo)
     {
         // todo a lot of this could be moved to a compute shader
         #region Batching
@@ -266,8 +267,8 @@ internal sealed unsafe class TextureBatcher : IDisposable
         SDL.GPUColorTargetInfo target = new()
         {
             Texture = colorTarget,
-            ClearColor = new SDL.FColor(0.0f, 0.0f, 0.0f, 1.0f),
-            LoadOp = hasCleared ? SDL.GPULoadOp.Load : SDL.GPULoadOp.Clear,
+            ClearColor = clearInfo.Color.ToFColor(),
+            LoadOp = clearInfo.HasCleared ? SDL.GPULoadOp.Load : SDL.GPULoadOp.Clear,
             StoreOp = SDL.GPUStoreOp.Store
         };
 
@@ -290,7 +291,7 @@ internal sealed unsafe class TextureBatcher : IDisposable
         #endregion
 
         // will always clear if the value is false so we can just set it to true
-        hasCleared = true;
+        clearInfo.HasCleared = true;
     }
 
     public void Dispose()

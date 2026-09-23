@@ -794,4 +794,9 @@ public struct Color
     /// YellowGreen has an RGB value of 154, 205, 50 (0x9ACD32)
     /// </summary>
     public static Color YellowGreen => new Color(0.6039215686274509f, 0.803921568627451f, 0.19607843137254902f);
+
+    /// <summary>
+    /// Transparent has an RGBA value of 0, 0, 0, 0 (0x00000000)
+    /// </summary>
+    public static Color Transparent => new Color(0.0f, 0.0f, 0.0f, 0.0f);
 }

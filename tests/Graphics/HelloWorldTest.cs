@@ -21,6 +21,7 @@ if (window.IsNull)
 
 Renderer.Init(window);
 Console.WriteLine(Renderer.BackendName);
+Renderer.BackgroundColor = Color.CornflowerBlue;
 
 Texture texture1 = new Texture("Content/DEBUG.png");
 Texture texture2 = new Texture("Content/bagel.png");
