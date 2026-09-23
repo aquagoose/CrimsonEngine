@@ -1,1 +1,12 @@
-﻿<Project Sdk="Microsoft.NET.Sdk" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="piko.SDL3" Version="0.0.6" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\Crimson.Core\Crimson.Core.csproj" />
+    <ProjectReference Include="..\Crimson.Math\Crimson.Math.csproj" />
+  </ItemGroup>
+</Project>

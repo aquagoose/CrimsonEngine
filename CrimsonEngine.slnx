@@ -5,6 +5,9 @@
   <Folder Name="/tests/Graphics/">
     <File Path="tests\Graphics\HelloWorldTest.cs" />
   </Folder>
+  <Folder Name="/tests/Platform/">
+    <File Path="tests\Platform\WindowTest.cs" />
+  </Folder>
   <Project Path="src/Crimson.Audio/Crimson.Audio.csproj" />
   <Project Path="src/Crimson.Core/Crimson.Core.csproj" />
   <Project Path="src/Crimson.Engine/Crimson.Engine.csproj" />
