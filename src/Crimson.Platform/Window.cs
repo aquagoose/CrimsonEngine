@@ -18,6 +18,8 @@ public static class Window
     
     private static SDL.Window _window;
 
+    public static nint Handle => _window.Handle;
+
     /// <summary>
     /// Initialize the window.
     /// </summary>
