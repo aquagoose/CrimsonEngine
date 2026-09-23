@@ -74,8 +74,9 @@ public static class Renderer
     /// </summary>
     /// <param name="texture">The <see cref="Texture"/> to use as the image.</param>
     /// <param name="position">The position, in pixels, to draw at.</param>
+    /// <param name="tint">The color the image should be tinted with, if any.</param>
     /// <remarks>The origin point is the top left of the texture.</remarks>
-    public static void DrawImage(Texture texture, Vector2 position)
+    public static void DrawImage(Texture texture, Vector2 position, Color? tint = null)
     {
         Debug.Assert(IsInitialized, "The renderer has not been initialized!");
         
@@ -85,7 +86,7 @@ public static class Renderer
         Vector2 bottomRight = position + new Vector2(texture.Size.Width, texture.Size.Height);
 
         TextureBatcher.Draw draw =
-            new TextureBatcher.Draw(texture, topLeft, topRight, bottomLeft, bottomRight, Vector4.One);
+            new TextureBatcher.Draw(texture, topLeft, topRight, bottomLeft, bottomRight, tint ?? Color.White);
         
         _uiBatcher.AddToBatch(in draw);
     }
@@ -127,7 +128,7 @@ public static class Renderer
 
         bool hasCleared = false;
 
-        Camera uiCamera = new Camera
+        Camera uiCamera = new()
         {
             Projection = Matrix4x4.CreateOrthographicOffCenter(0, _renderSize.Width, _renderSize.Height, 0, -1, 1),
             View = Matrix4x4.Identity

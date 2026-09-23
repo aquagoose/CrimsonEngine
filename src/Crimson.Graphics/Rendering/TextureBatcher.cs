@@ -308,9 +308,9 @@ internal sealed unsafe class TextureBatcher : IDisposable
         public readonly Vector2 TopRight;
         public readonly Vector2 BottomLeft;
         public readonly Vector2 BottomRight;
-        public readonly Vector4 Tint; // todo color struct
+        public readonly Color Tint;
 
-        public Draw(Texture texture, Vector2 topLeft, Vector2 topRight, Vector2 bottomLeft, Vector2 bottomRight, Vector4 tint)
+        public Draw(Texture texture, Vector2 topLeft, Vector2 topRight, Vector2 bottomLeft, Vector2 bottomRight, Color tint)
         {
             Texture = texture;
             TopLeft = topLeft;
@@ -325,9 +325,9 @@ internal sealed unsafe class TextureBatcher : IDisposable
     {
         public readonly Vector2 Position;
         public readonly Vector2 TexCoord;
-        public readonly Vector4 Tint; // todo color struct
+        public readonly Color Tint;
 
-        public Vertex(Vector2 position, Vector2 texCoord, Vector4 tint)
+        public Vertex(Vector2 position, Vector2 texCoord, Color tint)
         {
             Position = position;
             TexCoord = texCoord;

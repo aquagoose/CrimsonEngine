@@ -51,10 +51,14 @@ while (alive)
     
     for (int i = 0; i < 10; i++)
         Renderer.DrawImage(texture1, new Vector2(i * 30 + float.Sin(value + i) * 100, i * 50));
-    
+
     for (int i = 0; i < 10; i++)
-        Renderer.DrawImage(texture2, new Vector2((Renderer.Size.Width - texture2.Size.Width) - i * 30 + float.Cos(value + i) * 100, i * 50));
-    
+    {
+        Renderer.DrawImage(texture2,
+            new Vector2((Renderer.Size.Width - texture2.Size.Width) - i * 30 + float.Cos(value + i) * 100, i * 50),
+            Color.Aqua);
+    }
+
     Renderer.Render();
 }
 
