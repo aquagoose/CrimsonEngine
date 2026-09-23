@@ -10,10 +10,10 @@ internal static class SDLUtils
     {
         EnableBlend = true,
         SrcColorBlendfactor = SDL.GPUBlendFactor.SrcAlpha,
-        DstColorBlendfactor = SDL.GPUBlendFactor.OneMinusDstAlpha,
+        DstColorBlendfactor = SDL.GPUBlendFactor.OneMinusSrcAlpha,
         ColorBlendOp = SDL.GPUBlendOp.Add,
         SrcAlphaBlendfactor = SDL.GPUBlendFactor.SrcAlpha,
-        DstAlphaBlendfactor = SDL.GPUBlendFactor.OneMinusDstAlpha,
+        DstAlphaBlendfactor = SDL.GPUBlendFactor.OneMinusSrcAlpha,
         AlphaBlendOp = SDL.GPUBlendOp.Add
     };
     

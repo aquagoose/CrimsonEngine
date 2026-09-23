@@ -3,6 +3,7 @@ using System.Numerics;
 using Crimson.Core;
 using Crimson.Graphics.Rendering;
 using Crimson.Graphics.Utils;
+using Crimson.Math;
 using piko.SDL3;
 
 namespace Crimson.Graphics;
@@ -17,12 +18,19 @@ public static class Renderer
     /// </summary>
     public static bool IsInitialized { get; private set; }
 
+    private static Size<uint> _renderSize;
+    
     private static TextureBatcher _uiBatcher = null!;
     
     internal static RenderContext Context = null!;
 
     // todo: Renderer.BackgroundColor
 
+    /// <summary>
+    /// Gets the render size in pixels.
+    /// </summary>
+    public static Size<uint> Size => _renderSize;
+    
     /// <summary>
     /// Gets the name of the graphics backend associated with the renderer.
     /// </summary>
@@ -37,6 +45,9 @@ public static class Renderer
         Debug.Assert(!IsInitialized, "The renderer has already been initialized!");
         Context = new RenderContext(window);
 
+        SDL.GetWindowSizeInPixels(window, out int w, out int h);
+        _renderSize = new Size<uint>((uint) w, (uint) h);
+
         SDL.GPUTextureFormat format = SDL.GetGPUSwapchainTextureFormat(Context.Device, Context.Window);
         _uiBatcher = new TextureBatcher(Context, format);
         
@@ -49,14 +60,19 @@ public static class Renderer
     public static void Free()
     {
         Debug.Assert(IsInitialized, "The renderer has not been initialized!");
+        
         SDL.WaitForGPUIdle(Context.Device).Check("Wait for idle");
+        
         _uiBatcher.Dispose();
+        
         Context.Dispose();
         IsInitialized = false;
     }
 
     public static void DrawImage(Texture texture, Vector2 position)
     {
+        Debug.Assert(IsInitialized, "The renderer has not been initialized!");
+        
         Vector2 topLeft = position;
         Vector2 topRight = position + new Vector2(texture.Size.Width, 0);
         Vector2 bottomLeft = position + new Vector2(0, texture.Size.Height);
@@ -73,6 +89,7 @@ public static class Renderer
     /// </summary>
     public static void NewFrame()
     {
+        Debug.Assert(IsInitialized, "The renderer has not been initialized!");
         _uiBatcher.Clear();
     }
 
@@ -106,11 +123,17 @@ public static class Renderer
 
         Camera uiCamera = new Camera
         {
-            Projection = Matrix4x4.CreateOrthographicOffCenter(0, 1280, 720, 0, -1, 1),
+            Projection = Matrix4x4.CreateOrthographicOffCenter(0, _renderSize.Width, _renderSize.Height, 0, -1, 1),
             View = Matrix4x4.Identity
         };
         _uiBatcher.Render(cb, swapchainTexture, in uiCamera, ref hasCleared);
 
         SDL.SubmitGPUCommandBuffer(cb).Check("Submit command buffer");
+    }
+
+    public static void Resize(in Size<uint> newSize)
+    {
+        Debug.Assert(IsInitialized, "The renderer has not been initialized!");
+        _renderSize = newSize;
     }
 }

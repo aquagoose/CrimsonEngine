@@ -3,6 +3,7 @@
 
 using System.Numerics;
 using Crimson.Graphics;
+using Crimson.Math;
 using piko.SDL3;
 
 if (!SDL.Init(SDL.InitFlags.Video | SDL.InitFlags.Events))
@@ -21,7 +22,8 @@ if (window.IsNull)
 Renderer.Init(window);
 Console.WriteLine(Renderer.BackendName);
 
-Texture texture = new Texture("Content/DEBUG.png");
+Texture texture1 = new Texture("Content/DEBUG.png");
+Texture texture2 = new Texture("Content/bagel.png");
 float value = 0;
 
 bool alive = true;
@@ -34,6 +36,10 @@ while (alive)
             case SDL.EventType.Quit:
                 alive = false;
                 break;
+            case SDL.EventType.WindowResized:
+                Size<uint> newSize = new Size<uint>((uint) sdlEvent.Window.Data1, (uint) sdlEvent.Window.Data2);
+                Renderer.Resize(newSize);
+                break;
         }
     }
 
@@ -44,12 +50,16 @@ while (alive)
     Renderer.NewFrame();
     
     for (int i = 0; i < 10; i++)
-        Renderer.DrawImage(texture, new Vector2(i * 50 + float.Sin(value + i) * 100, i * 50));
+        Renderer.DrawImage(texture1, new Vector2(i * 30 + float.Sin(value + i) * 100, i * 50));
+    
+    for (int i = 0; i < 10; i++)
+        Renderer.DrawImage(texture2, new Vector2((Renderer.Size.Width - texture2.Size.Width) - i * 30 + float.Cos(value + i) * 100, i * 50));
     
     Renderer.Render();
 }
 
-texture.Dispose();
+texture2.Dispose();
+texture1.Dispose();
 Renderer.Free();
 SDL.DestroyWindow(window);
 SDL.Quit();
