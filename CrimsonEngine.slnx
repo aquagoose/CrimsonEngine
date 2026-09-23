@@ -6,6 +6,7 @@
     <File Path="tests\Graphics\HelloWorldTest.cs" />
   </Folder>
   <Folder Name="/tests/Platform/">
+    <File Path="tests\Platform\EventsTest.cs" />
     <File Path="tests\Platform\WindowTest.cs" />
   </Folder>
   <Project Path="src/Crimson.Audio/Crimson.Audio.csproj" />
