@@ -141,6 +141,22 @@ public static class Renderer
         };
         _uiBatcher.Render(cb, swapchainTexture, in uiCamera, ref clearInfo);
 
+        // ensure there's always a valid output
+        // if nothing has drawn, clear the screen to the background color.
+        if (!clearInfo.HasCleared)
+        {
+            SDL.GPUColorTargetInfo target = new()
+            {
+                Texture = swapchainTexture,
+                ClearColor = clearInfo.Color.ToFColor(),
+                LoadOp = SDL.GPULoadOp.Clear,
+                StoreOp = SDL.GPUStoreOp.Store
+            };
+
+            SDL.GPURenderPass pass = SDL.BeginGPURenderPass(cb, [target], null).Check("Begin render pass");
+            SDL.EndGPURenderPass(pass);
+        }
+
         SDL.SubmitGPUCommandBuffer(cb).Check("Submit command buffer");
     }
 
