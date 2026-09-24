@@ -44,7 +44,11 @@ public static class Window
             throw new Exception($"Failed to create window: {SDL.GetError()}");
         SDL.DestroyProperties(windowProps);
 
-        byte[] icon = Resource.Load("Crimson.Core.Assets.CrimsonLogo-Square.png", Assembly.GetAssembly(typeof(Logger)));
+        byte[] icon;
+        if (OperatingSystem.IsMacOS())
+            icon = Resource.Load("Crimson.Core.Assets.CrimsonIcon-MacOS.png", Assembly.GetAssembly(typeof(Logger)));
+        else
+            icon = Resource.Load("Crimson.Core.Assets.CrimsonIcon.png", Assembly.GetAssembly(typeof(Logger)));
         SDL.Surface surface;
         unsafe
         {
