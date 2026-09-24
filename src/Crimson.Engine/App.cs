@@ -14,7 +14,7 @@ public static class App
 {
     private static string _appName;
     private static string _appVersion;
-    private static Application? _application;
+    private static Application _application;
     private static bool _isRunning;
     
     /// <summary>
@@ -28,9 +28,9 @@ public static class App
     public static string Version => _appVersion;
 
     /// <summary>
-    /// The global <see cref="Crimson.Engine.Application"/> associated with the app, if any.
+    /// The global <see cref="Crimson.Engine.Application"/> associated with the app.
     /// </summary>
-    public static Application? Application => _application;
+    public static Application Application => _application;
 
     /// <summary>
     /// Gets if the application is running.
@@ -48,12 +48,15 @@ public static class App
 
     /// <summary>
     /// Run the application.
+    /// <param name="info">The <see cref="AppInfo"/> to use on app startup.</param>
+    /// <param name="application">A global <see cref="Crimson.Engine.Application"/> instance. If <see langword="null"/>
+    /// is provided, a default one will be used.</param>
     /// </summary>
     public static void Run(in AppInfo info, Application? application = null)
     {
         _appName = info.Name;
         _appVersion = info.Version;
-        _application = application;
+        _application = application ?? new Application();
         
         Logger.Info($"App Name: {_appName}");
         Logger.Info($"App Version: {_appVersion}");
@@ -79,7 +82,7 @@ public static class App
         Logger.Debug("Initializing renderer.");
         Renderer.Init(new SDL.Window(Window.Handle));
 
-        _application?.Init();
+        _application.Init();
         
         _isRunning = true;
         while (IsRunning)
@@ -88,8 +91,8 @@ public static class App
             
             Renderer.NewFrame();
             
-            _application?.Tick(1.0f / 60.0f);
-            _application?.Loop(1.0f / 60.0f);
+            _application.Tick(1.0f / 60.0f);
+            _application.Loop(1.0f / 60.0f);
             
             Renderer.Render();
         }

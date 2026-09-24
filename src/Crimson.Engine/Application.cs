@@ -1,6 +1,10 @@
 namespace Crimson.Engine;
 
-public abstract class Application
+/// <summary>
+/// A set of methods that run when assigned to the <see cref="App"/>. Derive this class to execute code globally, or to
+/// have finer control over the engine's update loop. 
+/// </summary>
+public class Application : IDisposable
 {
     /// <summary>
     /// Runs once, when the application is initialized.
@@ -20,4 +24,9 @@ public abstract class Application
     /// </summary>
     /// <param name="dt">The time in seconds since the last frame.</param>
     public virtual void Loop(float dt) { }
+
+    /// <summary>
+    /// Called when the application is disposed. Free resources in here.
+    /// </summary>
+    public virtual void Dispose() { }
 }
