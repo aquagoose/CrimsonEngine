@@ -1,15 +1,28 @@
-file(GLOB CRIMSON_SRC CONFIGURE_DEPENDS
-        include/Crimson/*.h
-        src/*.h
-        src/*.cpp
+option(CGE_ENABLE_GRAPHICS "Enable the graphics subsystem" ON)
+
+set(CGE_LINKLIBS "")
+
+file(GLOB CGE_SRC CONFIGURE_DEPENDS
+        include/Crimson/*
+        src/*
 
         # always include core in the src
-        include/Crimson/Core/*.h
-        src/Core/*.cpp
+        include/Crimson/Core/*
+        src/Core/*
 )
 
-add_library(Crimson STATIC ${CRIMSON_SRC})
+if (CGE_ENABLE_GRAPHICS)
+    file(GLOB_RECURSE CGE_GRAPHICS_SRC CONFIGURE_DEPENDS
+            include/Crimson/Graphics/*
+            src/Graphics/*
+    )
+    list(APPEND CGE_SRC ${CGE_GRAPHICS_SRC})
+    list(APPEND CGE_LINKLIBS SDL3::SDL3)
+endif ()
+
+add_library(Crimson STATIC ${CGE_SRC})
 target_include_directories(Crimson PUBLIC include)
+target_link_libraries(Crimson PUBLIC ${CGE_LINKLIBS})
 
 message(STATUS "Searching for tests")
 list(APPEND CMAKE_MESSAGE_INDENT "  ")
