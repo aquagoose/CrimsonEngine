@@ -97,6 +97,7 @@ public static class App
             Renderer.Render();
         }
         
+        _application.Dispose();
         Renderer.Free();
         Events.Free();
         Window.Free();

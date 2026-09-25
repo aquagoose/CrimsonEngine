@@ -19,4 +19,8 @@
         <EmbeddedResource Include="Shaders/**/*.spv" />
     </ItemGroup>
 
+    <ItemGroup>
+      <ClCompile Include="Shaders\Materials\Unlit.hlsl" />
+    </ItemGroup>
+
 </Project>

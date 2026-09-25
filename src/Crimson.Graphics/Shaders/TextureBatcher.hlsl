@@ -21,7 +21,7 @@ struct BatcherMatrices
 };
 
 VertexUniform(BatcherMatrices, camera, 0)
-PixelTexture2D(sprite, 0)
+PixelSampler2D(sprite, 0)
 
 VSOutput VSMain(const in QuadVertex input)
 {

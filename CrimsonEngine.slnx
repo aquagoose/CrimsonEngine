@@ -5,6 +5,7 @@
   </Folder>
   <Folder Name="/tests/Graphics/">
     <File Path="tests\Graphics\HelloWorldTest.cs" />
+    <File Path="tests\Graphics\SimpleMeshTest.cs" />
   </Folder>
   <Folder Name="/tests/Platform/">
     <File Path="tests\Platform\EventsTest.cs" />
