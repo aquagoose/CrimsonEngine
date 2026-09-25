@@ -47,9 +47,9 @@ namespace cge
                 break;
         }
 
-        _ss << '(' << fileName.filename() << ':' << location.line() << ") ";
+        _ss << '(' << fileName.filename().c_str() << ':' << location.line() << ") ";
         _ss << message;
 
-        std::cout << "\e[" << ansi << "m" << message << "\e[0m" << std::endl;
+        std::cout << "\e[" << ansi << "m" << _ss.str() << "\e[0m" << std::endl;
     }
 }
