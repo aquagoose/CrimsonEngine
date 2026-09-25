@@ -2,7 +2,7 @@
 
 #include <SDL3/SDL.h>
 
-namespace cge
+namespace cge::pvt
 {
     class RenderContext final
     {

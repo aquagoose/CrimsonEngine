@@ -1,13 +1,18 @@
 #pragma once
 
+#include "Private/RenderContext.h"
+
+#include <SDL3/SDL.h>
+
 #include <memory>
 
 namespace cge
 {
-    class RenderContext;
-
     class Renderer final
     {
-        std::unique_ptr<RenderContext> _context;
+        std::unique_ptr<pvt::RenderContext> _context;
+
+    public:
+        explicit Renderer(SDL_Window* window);
     };
 }
