@@ -6,6 +6,11 @@ namespace Crimson.Graphics.Utils;
 
 internal static class SDLUtils
 {
+    public static SDL.GPUColorTargetBlendState NoBlend => new SDL.GPUColorTargetBlendState
+    {
+        EnableBlend = false
+    };
+    
     public static SDL.GPUColorTargetBlendState NonPremultipliedBlend => new SDL.GPUColorTargetBlendState
     {
         EnableBlend = true,

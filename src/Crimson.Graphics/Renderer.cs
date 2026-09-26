@@ -26,6 +26,12 @@ public static class Renderer
     internal static RenderContext Context = null!;
 
     /// <summary>
+    /// Get the target format of the 3D renderer.
+    /// </summary>
+    internal static SDL.GPUTextureFormat MainRendererTargetFormat =>
+        SDL.GetGPUSwapchainTextureFormat(Context.Device, Context.Window);
+
+    /// <summary>
     /// Get or set the background color which is used when a skybox is not present.
     /// </summary>
     public static Color BackgroundColor;
