@@ -5,7 +5,7 @@ using piko.SDL3;
 namespace Crimson.Graphics.Materials;
 
 /// <summary>
-/// A material can be applied to a <see cref="Mesh"/>, and determines the mesh's appearance.
+/// A material can be applied to a <see cref="Renderable"/>, and determines the mesh's appearance.
 /// </summary>
 public abstract class Material : IDisposable
 {

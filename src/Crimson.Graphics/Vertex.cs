@@ -3,7 +3,7 @@ using System.Numerics;
 namespace Crimson.Graphics;
 
 /// <summary>
-/// Defines the parameters for each vertex of a <see cref="Mesh"/>.
+/// Defines the parameters for each vertex of a <see cref="Renderable"/>.
 /// </summary>
 public struct Vertex
 {

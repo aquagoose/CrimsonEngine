@@ -163,6 +163,15 @@ internal sealed class RenderContext : IDisposable
         return SDL.CreateGPUBuffer(Device, &bufferInfo).Check("Create buffer");
     }
 
+    public unsafe SDL.GPUBuffer CreateBuffer<T>(SDL.GPUBufferUsageFlags usage, ReadOnlySpan<T> data) where T : unmanaged
+    {
+        uint dataSize = (uint) (data.Length * sizeof(T));
+        SDL.GPUBuffer buffer = CreateBuffer(usage, dataSize);
+        fixed (void* pData = data)
+            CopyDataToBuffer(buffer, pData, 0, dataSize);
+        return buffer;
+    }
+
     public unsafe SDL.GPUTransferBuffer CreateTransferBuffer(SDL.GPUTransferBufferUsage usage, uint size)
     {
         SDL.GPUTransferBufferCreateInfo bufferInfo = new()
@@ -199,6 +208,37 @@ internal sealed class RenderContext : IDisposable
         _transferBufferOffset += size;
 
         return _transferBuffer;
+    }
+
+    public unsafe void CopyDataToBuffer(SDL.GPUBuffer buffer, void* data, uint offset, uint size)
+    {
+        SDL.GPUTransferBuffer transBuffer = GetUploadBuffer(size, out uint bufferOffset, out bool cycle);
+        Logger.Trace($"Uploading {size / 1024}KiB data to buffer {buffer.Handle} (Offset: {bufferOffset}, Cycle: {cycle})");
+
+        nint mapped = SDL.MapGPUTransferBuffer(Device, transBuffer, cycle).Check("Map transfer buffer");
+        Unsafe.CopyBlock((byte*) mapped + bufferOffset, data, size);
+        SDL.UnmapGPUTransferBuffer(Device, transBuffer);
+
+        SDL.GPUCommandBuffer cb = SDL.AcquireGPUCommandBuffer(Device).Check("Acquire command buffer");
+        SDL.GPUCopyPass pass = SDL.BeginGPUCopyPass(cb);
+
+        SDL.GPUTransferBufferLocation src = new()
+        {
+            TransferBuffer = transBuffer,
+            Offset = bufferOffset
+        };
+
+        SDL.GPUBufferRegion dest = new()
+        {
+            Buffer = buffer,
+            Offset = offset,
+            Size = size
+        };
+        
+        SDL.UploadToGPUBuffer(pass, &src, &dest, false);
+        
+        SDL.EndGPUCopyPass(pass);
+        SDL.SubmitGPUCommandBuffer(cb).Check("Submit command buffer");
     }
 
     // todo Vec2<uint> for X and Y
