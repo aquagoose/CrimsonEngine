@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.InteropServices;
 using Crimson.Core;
 using Crimson.Graphics.Rendering;
 using Crimson.Graphics.Rendering.Structs;
@@ -20,7 +21,9 @@ public static class Renderer
     public static bool IsInitialized { get; private set; }
 
     private static Size<uint> _renderSize;
-    
+    private static List<Camera> _cameras;
+
+    private static ForwardPlusRenderer _renderer = null!;
     private static TextureBatcher _uiBatcher = null!;
     
     internal static RenderContext Context = null!;
@@ -61,6 +64,9 @@ public static class Renderer
         _renderSize = new Size<uint>((uint) w, (uint) h);
 
         SDL.GPUTextureFormat format = SDL.GetGPUSwapchainTextureFormat(Context.Device, Context.Window);
+
+        _cameras = [];
+        _renderer = new ForwardPlusRenderer();
         _uiBatcher = new TextureBatcher(Context, format);
         
         IsInitialized = true;
@@ -76,10 +82,14 @@ public static class Renderer
         SDL.WaitForGPUIdle(Context.Device).Check("Wait for idle");
         
         _uiBatcher.Dispose();
+        _renderer.Dispose();
         
         Context.Dispose();
         IsInitialized = false;
     }
+
+    public static void AddCamera(in Camera camera)
+        => _cameras.Add(camera);
 
     /// <summary>
     /// Draw a 2D image.
@@ -103,12 +113,22 @@ public static class Renderer
         _uiBatcher.AddToBatch(in draw);
     }
 
+    public static void DrawRenderable(Renderable renderable, Matrix4x4 worldMatrix)
+    {
+        Debug.Assert(IsInitialized, "The renderer has not been initialized!");
+        
+        ForwardPlusRenderer.Draw draw = new ForwardPlusRenderer.Draw(renderable, worldMatrix);
+        _renderer.AddToDrawQueue(in draw);
+    }
+
     /// <summary>
     /// Signal that a new frame has begun, and reset various states ready for new draw commands.
     /// </summary>
     public static void NewFrame()
     {
         Debug.Assert(IsInitialized, "The renderer has not been initialized!");
+        _cameras.Clear();
+        _renderer.Clear();
         _uiBatcher.Clear();
     }
 
@@ -139,6 +159,14 @@ public static class Renderer
         Context.MipmapQueue.Clear();
 
         ClearInfo clearInfo = new ClearInfo(BackgroundColor, false);
+
+        ReadOnlySpan<Camera> cameras = CollectionsMarshal.AsSpan(_cameras);
+        for (int i = 0; i < cameras.Length; i++)
+        {
+            ref readonly Camera camera = ref cameras[i];
+            // todo: camera should contain the viewport size
+            _renderer.Render(cb, swapchainTexture, new SDL.GPUTexture(), _renderSize, in camera, ref clearInfo);
+        }
 
         Camera uiCamera = new()
         {

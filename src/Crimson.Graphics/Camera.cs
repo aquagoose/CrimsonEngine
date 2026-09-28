@@ -1,4 +1,5 @@
 using System.Numerics;
+using Crimson.Math;
 
 namespace Crimson.Graphics;
 
@@ -17,5 +18,15 @@ public struct Camera
         Projection = projection;
         View = view;
         Position = position;
+    }
+
+    public static Camera Perspective(Vector3 position, Vector3 forward, Vector3 up, float fov, Size<uint> viewportSize, float near, float far)
+    {
+        return new Camera
+        {
+            Projection = Matrix4x4.CreatePerspectiveFieldOfView(fov, viewportSize.Width / (float) viewportSize.Height, near, far),
+            View = Matrix4x4.CreateLookAt(position, position + forward, up),
+            Position = position
+        };
     }
 }

@@ -11,6 +11,8 @@ public sealed class Renderable : IDisposable
     internal readonly SDL.GPUBuffer VertexBuffer;
     internal readonly SDL.GPUBuffer IndexBuffer;
 
+    internal readonly uint NumElements;
+
     public Material Material;
     
     public Renderable(ReadOnlySpan<Vertex> vertices, ReadOnlySpan<uint> indices, Material material)
@@ -24,6 +26,8 @@ public sealed class Renderable : IDisposable
 
         VertexBuffer = _context.CreateBuffer(SDL.GPUBufferUsageFlags.Vertex, vertices);
         IndexBuffer = _context.CreateBuffer(SDL.GPUBufferUsageFlags.Index, indices);
+
+        NumElements = (uint) indices.Length;
     }
     
     public void Dispose()

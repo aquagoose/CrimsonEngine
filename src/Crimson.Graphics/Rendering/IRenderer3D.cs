@@ -4,7 +4,7 @@ using piko.SDL3;
 
 namespace Crimson.Graphics.Rendering;
 
-internal interface IRenderer3D
+internal interface IRenderer3D : IDisposable
 {
     public void Render(SDL.GPUCommandBuffer cb, SDL.GPUTexture colorTarget, SDL.GPUTexture depthTarget,
         Size<uint> viewportSize, ref readonly Camera camera, ref ClearInfo clear);

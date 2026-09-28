@@ -1,5 +1,8 @@
 using System.Numerics;
+using System.Runtime.InteropServices;
+using Crimson.Graphics.Materials;
 using Crimson.Graphics.Rendering.Structs;
+using Crimson.Graphics.Utils;
 using Crimson.Math;
 using piko.SDL3;
 
@@ -8,24 +11,75 @@ namespace Crimson.Graphics.Rendering;
 internal sealed class ForwardPlusRenderer : IRenderer3D
 {
     private readonly List<Draw> _opaques;
+    private readonly Comparison<Draw> _ftbComparison;
+    private Camera _currentCamera;
     
     public ForwardPlusRenderer()
     {
         _opaques = [];
+        _ftbComparison = CompareDrawsFTB;
     }
 
-    public void AddToDrawQueue(Renderable renderable, Matrix4x4 world)
+    public void Clear()
     {
-        _opaques.Add(new Draw());
+        _opaques.Clear();
+    }
+
+    public void AddToDrawQueue(ref readonly Draw draw)
+    {
+        _opaques.Add(draw);
     }
     
-    public void Render(SDL.GPUCommandBuffer cb, SDL.GPUTexture colorTarget, SDL.GPUTexture depthTarget, Size<uint> viewportSize,
-        ref readonly Camera camera, ref ClearInfo clear)
+    public unsafe void Render(SDL.GPUCommandBuffer cb, SDL.GPUTexture colorTarget, SDL.GPUTexture depthTarget,
+        Size<uint> viewportSize, ref readonly Camera camera, ref ClearInfo clear)
     {
+        _currentCamera = camera;
+        // sort opaques front to back, and everything else back to front
+        _opaques.Sort(_ftbComparison);
+
+        SceneInfo scene = new SceneInfo(camera);
+        SDL.PushGPUVertexUniformData(cb, 0, (nint) (&scene), (uint) sizeof(SceneInfo));
         
+        SDL.GPUColorTargetInfo target = new()
+        {
+            Texture = colorTarget,
+            ClearColor = clear.Color.ToFColor(),
+            LoadOp = clear.HasCleared ? SDL.GPULoadOp.Load : SDL.GPULoadOp.Clear,
+            StoreOp = SDL.GPUStoreOp.Store
+        };
+
+        SDL.GPURenderPass pass = SDL.BeginGPURenderPass(cb, &target, 1, null).Check("Begin render pass");
+
+        ReadOnlySpan<Draw> opaques = CollectionsMarshal.AsSpan(_opaques);
+        for (int i = 0; i < opaques.Length; i++)
+        {
+            ref readonly Draw draw = ref opaques[i];
+            Renderable renderable = draw.Renderable;
+            Material material = renderable.Material;
+            
+            fixed (Matrix4x4* worldMatrix = &draw.WorldMatrix)
+                SDL.PushGPUVertexUniformData(cb, 1, (nint) worldMatrix, (uint) sizeof(Matrix4x4));
+            
+            SDL.BindGPUGraphicsPipeline(pass, material.Pipeline);
+            SDL.BindGPUVertexBuffer(pass, 0, renderable.VertexBuffer);
+            SDL.BindGPUIndexBuffer(pass, renderable.IndexBuffer, SDL.GPUIndexElementSize.Size32bit);
+
+            SDL.DrawGPUIndexedPrimitives(pass, renderable.NumElements, 1, 0, 0, 0);
+        }
+        
+        SDL.EndGPURenderPass(pass);
+        
+        // set this to true as the renderer will always clear if false
+        clear.HasCleared = true;
     }
 
-    private struct Draw
+    private int CompareDrawsFTB(Draw draw1, Draw draw2)
+    {
+        return Vector3.Distance(draw1.WorldMatrix.Translation, _currentCamera.Position)
+            .CompareTo(Vector3.Distance(draw2.WorldMatrix.Translation, _currentCamera.Position));
+    }
+
+    public struct Draw
     {
         public Renderable Renderable;
         public Matrix4x4 WorldMatrix;
@@ -35,5 +89,10 @@ internal sealed class ForwardPlusRenderer : IRenderer3D
             Renderable = renderable;
             WorldMatrix = worldMatrix;
         }
+    }
+
+    public void Dispose()
+    {
+        
     }
 }

@@ -24,10 +24,10 @@ class SimpleMeshTest : Application
 
         ReadOnlySpan<Vertex> vertices =
         [
-            new Vertex(new Vector3(-0.5f, -0.5f, 0.0f), new Vector2(0, 0), new Vector3(0, 0, -1), Color.White),
-            new Vertex(new Vector3(-0.5f,  0.5f, 0.0f), new Vector2(0, 1), new Vector3(0, 0, -1), Color.White),
-            new Vertex(new Vector3( 0.5f,  0.5f, 0.0f), new Vector2(1, 1), new Vector3(0, 0, -1), Color.White),
-            new Vertex(new Vector3( 0.5f, -0.5f, 0.0f), new Vector2(0, 0), new Vector3(0, 0, -1), Color.White),
+            new Vertex(new Vector3(-0.5f, -0.5f, 0.0f), new Vector2(0, 0), new Vector3(0, 0, -1), new Color(1.0f, 0.0f, 0.0f)),
+            new Vertex(new Vector3(-0.5f,  0.5f, 0.0f), new Vector2(0, 1), new Vector3(0, 0, -1), new Color(0.0f, 1.0f, 0.0f)),
+            new Vertex(new Vector3( 0.5f,  0.5f, 0.0f), new Vector2(1, 1), new Vector3(0, 0, -1), new Color(0.0f, 0.0f, 1.0f)),
+            new Vertex(new Vector3( 0.5f, -0.5f, 0.0f), new Vector2(0, 0), new Vector3(0, 0, -1), new Color(0.0f, 0.0f, 0.0f)),
         ];
 
         ReadOnlySpan<uint> indices =
@@ -39,6 +39,14 @@ class SimpleMeshTest : Application
         _renderable = new Renderable(vertices, indices, _material);
         
         base.Init();
+    }
+
+    public override void Loop(float dt)
+    {
+        Renderer.AddCamera(Camera.Perspective(new Vector3(0, 0, 3), -Vector3.UnitZ, Vector3.UnitY, float.DegreesToRadians(45), Renderer.Size, 0.1f, 100f));
+        Renderer.DrawRenderable(_renderable, Matrix4x4.Identity);
+        
+        base.Loop(dt);
     }
 
     public override void Dispose()

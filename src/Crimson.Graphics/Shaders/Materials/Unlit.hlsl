@@ -7,13 +7,14 @@ struct VSOutput
     float4 Color:    COLOR0;
 };
 
-PixelSampler2D(Albedo, 0)
+//PixelSampler2D(Albedo, 0)
+VertexUniform(float4x4, World, 1)
 
 VSOutput VSMain(const in Vertex input)
 {
     VSOutput output;
     
-    output.Position = mul(Scene.Camera.Projection, mul(Scene.Camera.View, float4(input.Position, 1.0)));
+    output.Position = mul(Scene.Camera.Projection, mul(Scene.Camera.View, mul(World, float4(input.Position, 1.0))));
     output.TexCoord = input.TexCoord;
     output.Color = input.Color;
     
@@ -22,5 +23,6 @@ VSOutput VSMain(const in Vertex input)
 
 float4 PSMain(const in VSOutput input): SV_Target0
 {
-    return SampleTexture(Albedo, input.TexCoord) * input.Color;
+    //return SampleTexture(Albedo, input.TexCoord) * input.Color;
+    return input.Color;
 }
