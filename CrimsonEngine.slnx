@@ -11,6 +11,9 @@
     <File Path="tests\Platform\EventsTest.cs" />
     <File Path="tests\Platform\WindowTest.cs" />
   </Folder>
+  <Folder Name="/tools/">
+    <File Path="tools\CompileShaders.cs" />
+  </Folder>
   <Project Path="src/Crimson.Audio/Crimson.Audio.csproj" />
   <Project Path="src/Crimson.Core/Crimson.Core.csproj" />
   <Project Path="src/Crimson.Engine/Crimson.Engine.csproj" />
