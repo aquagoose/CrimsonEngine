@@ -12,6 +12,7 @@ struct Camera
 {
     float4x4 Projection;
     float4x4 View;
+    uint2 ViewportSize;
     float3 Position;
     float __padding;
 };

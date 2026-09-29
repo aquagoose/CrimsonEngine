@@ -164,8 +164,7 @@ public static class Renderer
         for (int i = 0; i < cameras.Length; i++)
         {
             ref readonly Camera camera = ref cameras[i];
-            // todo: camera should contain the viewport size
-            _renderer.Render(cb, swapchainTexture, new SDL.GPUTexture(), _renderSize, in camera, ref clearInfo);
+            _renderer.Render(cb, swapchainTexture, new SDL.GPUTexture(), camera.ViewportSize, in camera, ref clearInfo);
         }
 
         Camera uiCamera = new()
