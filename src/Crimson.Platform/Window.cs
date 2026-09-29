@@ -37,6 +37,7 @@ public static class Window
         SDL.SetNumberProperty(windowProps, SDL.Prop.WindowCreateWidthNumber, info.Size.Width);
         SDL.SetNumberProperty(windowProps, SDL.Prop.WindowCreateHeightNumber, info.Size.Height);
         SDL.SetBooleanProperty(windowProps, SDL.Prop.WindowCreateResizableBoolean, info.Resizable);
+        SDL.SetBooleanProperty(windowProps, SDL.Prop.WindowCreateHighPixelDensityBoolean, true);
         
         Logger.Trace("Creating window.");
         _window = SDL.CreateWindowWithProperties(windowProps);

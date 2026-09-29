@@ -1,3 +1,4 @@
+using Crimson.Math;
 using piko.SDL3;
 
 namespace Crimson.Platform;
@@ -5,6 +6,8 @@ namespace Crimson.Platform;
 public static class Events
 {
     public static event OnQuit Quit;
+
+    public static event OnResized Resized;
 
     public static void Init()
     {
@@ -29,6 +32,12 @@ public static class Events
                 case SDL.EventType.Quit:
                     Quit();
                     break;
+                case SDL.EventType.WindowResized:
+                {
+                    Size<uint> newSize = new Size<uint>((uint) e.Window.Data1, (uint) e.Window.Data2);
+                    Resized(newSize);
+                    break;
+                }
             }
         }
     }
@@ -36,7 +45,10 @@ public static class Events
     private static void Reset()
     {
         Quit = delegate { };
+        Resized = delegate { };
     }
 
     public delegate void OnQuit();
+
+    public delegate void OnResized(Size<uint> newSize);
 }

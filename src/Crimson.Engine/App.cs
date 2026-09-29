@@ -73,11 +73,12 @@ public static class App
         TicksPerSecond = 60; // todo add this to AppInfo
         
         Logger.Debug("Initializing window.");
-        Window.Init(new WindowInfo("Test", new Size<uint>(1280, 720), true)); // todo window options in appinfo
+        Window.Init(new WindowInfo(info.Name, new Size<uint>(1280, 720), true)); // todo window options in appinfo
         
         Logger.Debug("Initializing events.");
         Events.Init();
         Events.Quit += Quit;
+        Events.Resized += Resize;
         
         Logger.Debug("Initializing renderer.");
         Renderer.Init(new SDL.Window(Window.Handle));
@@ -109,5 +110,10 @@ public static class App
     public static void Quit()
     {
         _isRunning = false;
+    }
+    
+    private static void Resize(Size<uint> newSize)
+    {
+        Renderer.Resize(newSize);
     }
 }
