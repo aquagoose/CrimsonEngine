@@ -78,7 +78,7 @@ internal sealed class ForwardPlusRenderer : IRenderer3D
             StoreOp = SDL.GPUStoreOp.Store
         };
 
-        SDL.GPURenderPass pass = SDL.BeginGPURenderPass(cb, &colorTargetInfo, 1, null).Check("Begin render pass");
+        SDL.GPURenderPass pass = SDL.BeginGPURenderPass(cb, &colorTargetInfo, 1, &depthTargetInfo).Check("Begin render pass");
 
         ReadOnlySpan<Draw> opaques = CollectionsMarshal.AsSpan(_opaques);
         for (int i = 0; i < opaques.Length; i++)

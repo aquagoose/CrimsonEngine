@@ -91,6 +91,7 @@ public static class Renderer
         _uiBatcher.Dispose();
         _renderer.Dispose();
         
+        SDL.ReleaseGPUTexture(Context.Device, _depthTarget);
         Context.Dispose();
         IsInitialized = false;
     }
