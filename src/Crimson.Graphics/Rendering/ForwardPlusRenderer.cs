@@ -62,7 +62,7 @@ internal sealed class ForwardPlusRenderer : IRenderer3D
         SceneInfo scene = new SceneInfo(camera);
         SDL.PushGPUVertexUniformData(cb, 0, (nint) (&scene), (uint) sizeof(SceneInfo));
         
-        SDL.GPUColorTargetInfo target = new()
+        SDL.GPUColorTargetInfo colorTargetInfo = new()
         {
             Texture = colorTarget,
             ClearColor = clear.Color.ToFColor(),
@@ -70,7 +70,15 @@ internal sealed class ForwardPlusRenderer : IRenderer3D
             StoreOp = SDL.GPUStoreOp.Store
         };
 
-        SDL.GPURenderPass pass = SDL.BeginGPURenderPass(cb, &target, 1, null).Check("Begin render pass");
+        SDL.GPUDepthStencilTargetInfo depthTargetInfo = new()
+        {
+            Texture = depthTarget,
+            ClearDepth = 1,
+            LoadOp = clear.HasCleared ? SDL.GPULoadOp.Load : SDL.GPULoadOp.Clear,
+            StoreOp = SDL.GPUStoreOp.Store
+        };
+
+        SDL.GPURenderPass pass = SDL.BeginGPURenderPass(cb, &colorTargetInfo, 1, null).Check("Begin render pass");
 
         ReadOnlySpan<Draw> opaques = CollectionsMarshal.AsSpan(_opaques);
         for (int i = 0; i < opaques.Length; i++)

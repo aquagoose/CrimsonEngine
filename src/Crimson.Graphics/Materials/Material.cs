@@ -62,7 +62,8 @@ public abstract class Material : IDisposable
             {
                 NumColorTargets = 1,
                 ColorTargetDescriptions = &colorTarget,
-                // todo depth target
+                HasDepthStencilTarget = true,
+                DepthStencilFormat = Renderer.MainRendererDepthFormat
             },
             VertexInputState = new SDL.GPUVertexInputState
             {
@@ -71,10 +72,11 @@ public abstract class Material : IDisposable
                 NumVertexAttributes = numVertexAttributes,
                 VertexAttributes = inputLayout
             },
-            DepthStencilState = new SDL.GPUDepthStencilState // todo depth buffer
+            DepthStencilState = new SDL.GPUDepthStencilState
             {
-                EnableDepthTest = false,
-                EnableDepthWrite = false,
+                EnableDepthTest = true,
+                EnableDepthWrite = true,
+                CompareOp = SDL.GPUCompareOp.LessOrEqual
             },
             RasterizerState = new SDL.GPURasterizerState
             {

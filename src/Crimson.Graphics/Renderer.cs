@@ -21,7 +21,8 @@ public static class Renderer
     public static bool IsInitialized { get; private set; }
 
     private static Size<uint> _renderSize;
-    private static List<Camera> _cameras;
+    private static SDL.GPUTexture _depthTarget;
+    private static List<Camera> _cameras = null!;
 
     private static ForwardPlusRenderer _renderer = null!;
     private static TextureBatcher _uiBatcher = null!;
@@ -33,6 +34,11 @@ public static class Renderer
     /// </summary>
     internal static SDL.GPUTextureFormat MainRendererTargetFormat =>
         SDL.GetGPUSwapchainTextureFormat(Context.Device, Context.Window);
+
+    /// <summary>
+    /// Get the depth target format of the 3D renderer.
+    /// </summary>
+    internal static SDL.GPUTextureFormat MainRendererDepthFormat => SDL.GPUTextureFormat.D32Float;
 
     /// <summary>
     /// Get or set the background color which is used when a skybox is not present.
@@ -62,6 +68,7 @@ public static class Renderer
 
         SDL.GetWindowSizeInPixels(window, out int w, out int h);
         _renderSize = new Size<uint>((uint) w, (uint) h);
+        RecreateDepthTarget();
 
         SDL.GPUTextureFormat format = SDL.GetGPUSwapchainTextureFormat(Context.Device, Context.Window);
 
@@ -88,6 +95,12 @@ public static class Renderer
         IsInitialized = false;
     }
 
+    /// <summary>
+    /// Add a <see cref="Camera"/> to draw 2D and 3D scenes.
+    /// </summary>
+    /// <param name="camera">The <see cref="Camera"/> to add.</param>
+    /// <remarks>This will NOT affect methods such as <see cref="DrawImage"/> as UI rendering is not affected by
+    /// cameras, and is always drawn over the scene.</remarks>
     public static void AddCamera(in Camera camera)
         => _cameras.Add(camera);
 
@@ -113,7 +126,13 @@ public static class Renderer
         _uiBatcher.AddToBatch(in draw);
     }
 
-    public static void DrawRenderable(Renderable renderable, Matrix4x4 worldMatrix)
+    /// <summary>
+    /// Draw a <see cref="Renderable"/>.
+    /// </summary>
+    /// <param name="renderable">The <see cref="Renderable"/> to draw.</param>
+    /// <param name="worldMatrix">The world <see cref="Matrix4x4"/>.</param>
+    /// <param name="layerID">The layer ID to draw to.</param>
+    public static void DrawRenderable(Renderable renderable, Matrix4x4 worldMatrix, int layerID = 0)
     {
         Debug.Assert(IsInitialized, "The renderer has not been initialized!");
         
@@ -164,7 +183,7 @@ public static class Renderer
         for (int i = 0; i < cameras.Length; i++)
         {
             ref readonly Camera camera = ref cameras[i];
-            _renderer.Render(cb, swapchainTexture, new SDL.GPUTexture(), camera.ViewportSize, in camera, ref clearInfo);
+            _renderer.Render(cb, swapchainTexture, _depthTarget, camera.ViewportSize, in camera, ref clearInfo);
         }
 
         Camera uiCamera = new()
@@ -201,5 +220,27 @@ public static class Renderer
     {
         Debug.Assert(IsInitialized, "The renderer has not been initialized!");
         _renderSize = newSize;
+        RecreateDepthTarget();
+    }
+
+    private static unsafe void RecreateDepthTarget()
+    {
+        if (!_depthTarget.IsNull)
+            SDL.ReleaseGPUTexture(Context.Device, _depthTarget);
+        
+        SDL.GPUTextureCreateInfo textureInfo = new()
+        {
+            Type = SDL.GPUTextureType.Type2d,
+            Width = _renderSize.Width,
+            Height = _renderSize.Height,
+            LayerCountOrDepth = 1,
+            Format = MainRendererDepthFormat,
+            NumLevels = 1,
+            Usage = SDL.GPUTextureUsageFlags.DepthStencilTarget,
+            SampleCount = SDL.GPUSampleCount.Count1
+        };
+
+        Logger.Trace("Creating depth target.");
+        _depthTarget = SDL.CreateGPUTexture(Context.Device, &textureInfo).Check("Create depth target");
     }
 }

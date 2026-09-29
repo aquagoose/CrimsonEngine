@@ -1,4 +1,5 @@
 ﻿using Crimson.Core;
+using Crimson.Graphics.Materials;
 using Crimson.Graphics.Utils;
 using Crimson.Math;
 using piko.SDL3;
