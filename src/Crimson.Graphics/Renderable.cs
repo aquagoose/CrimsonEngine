@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using Crimson.Graphics.Materials;
+using Crimson.Graphics.Primitives;
 using piko.SDL3;
 
 namespace Crimson.Graphics;
@@ -29,7 +30,9 @@ public sealed class Renderable : IDisposable
 
         NumElements = (uint) indices.Length;
     }
-    
+
+    public Renderable(IPrimitive primitive, Material material) : this(primitive.Vertices, primitive.Indices, material) { }
+
     public void Dispose()
     {
         SDL.ReleaseGPUBuffer(_context.Device, IndexBuffer);

@@ -80,8 +80,8 @@ public abstract class Material : IDisposable
             },
             RasterizerState = new SDL.GPURasterizerState
             {
-                CullMode = SDL.GPUCullMode.None,
-                FrontFace = SDL.GPUFrontFace.Clockwise,
+                CullMode = SDL.GPUCullMode.Back,
+                FrontFace = SDL.GPUFrontFace.CounterClockwise,
                 FillMode = SDL.GPUFillMode.Fill
             },
             MultisampleState = new SDL.GPUMultisampleState
