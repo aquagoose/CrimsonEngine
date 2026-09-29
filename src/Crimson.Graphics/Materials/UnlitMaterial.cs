@@ -9,4 +9,6 @@ public sealed class UnlitMaterial(Texture texture, MaterialInfo info = new()) : 
     /// The <see cref="Crimson.Graphics.Texture"/> to apply to the material. 
     /// </summary>
     public Texture Texture = texture;
+
+    protected internal override ReadOnlySpan<Texture> Textures => new ReadOnlySpan<Texture>(ref Texture);
 }

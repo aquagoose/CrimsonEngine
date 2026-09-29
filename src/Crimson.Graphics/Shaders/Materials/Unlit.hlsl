@@ -7,7 +7,7 @@ struct VSOutput
     float4 Color:    COLOR0;
 };
 
-//PixelSampler2D(Albedo, 0)
+PixelSampler2D(Albedo, 0)
 VertexUniform(float4x4, World, 1)
 
 VSOutput VSMain(const in Vertex input)
@@ -23,6 +23,5 @@ VSOutput VSMain(const in Vertex input)
 
 float4 PSMain(const in VSOutput input): SV_Target0
 {
-    //return SampleTexture(Albedo, input.TexCoord) * input.Color;
-    return input.Color;
+    return SampleTexture(Albedo, input.TexCoord) * input.Color;
 }

@@ -66,7 +66,7 @@ public static class Renderer
         SDL.GPUTextureFormat format = SDL.GetGPUSwapchainTextureFormat(Context.Device, Context.Window);
 
         _cameras = [];
-        _renderer = new ForwardPlusRenderer();
+        _renderer = new ForwardPlusRenderer(Context);
         _uiBatcher = new TextureBatcher(Context, format);
         
         IsInitialized = true;

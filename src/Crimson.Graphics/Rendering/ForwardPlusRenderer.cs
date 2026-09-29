@@ -1,5 +1,6 @@
 using System.Numerics;
 using System.Runtime.InteropServices;
+using Crimson.Core;
 using Crimson.Graphics.Materials;
 using Crimson.Graphics.Rendering.Structs;
 using Crimson.Graphics.Utils;
@@ -10,14 +11,35 @@ namespace Crimson.Graphics.Rendering;
 
 internal sealed class ForwardPlusRenderer : IRenderer3D
 {
+    private readonly RenderContext _context;
+    
     private readonly List<Draw> _opaques;
     private readonly Comparison<Draw> _ftbComparison;
     private Camera _currentCamera;
+
+    private readonly SDL.GPUSampler _temporarySampler;
     
-    public ForwardPlusRenderer()
+    public unsafe ForwardPlusRenderer(RenderContext context)
     {
+        _context = context;
+        
         _opaques = [];
         _ftbComparison = CompareDrawsFTB;
+
+        SDL.GPUSamplerCreateInfo samplerInfo = new()
+        {
+            MinFilter = SDL.GPUFilter.Linear,
+            MagFilter = SDL.GPUFilter.Linear,
+            MipmapMode = SDL.GPUSamplerMipmapMode.Linear,
+            AddressModeU = SDL.GPUSamplerAddressMode.ClampToEdge,
+            AddressModeV = SDL.GPUSamplerAddressMode.ClampToEdge,
+            AddressModeW = SDL.GPUSamplerAddressMode.ClampToEdge,
+            MinLod = 0,
+            MaxLod = float.MaxValue
+        };
+        
+        Logger.Trace("Creating temporary sampler.");
+        _temporarySampler = SDL.CreateGPUSampler(_context.Device, &samplerInfo).Check("Create sampler");
     }
 
     public void Clear()
@@ -61,6 +83,7 @@ internal sealed class ForwardPlusRenderer : IRenderer3D
                 SDL.PushGPUVertexUniformData(cb, 1, (nint) worldMatrix, (uint) sizeof(Matrix4x4));
             
             SDL.BindGPUGraphicsPipeline(pass, material.Pipeline);
+            SDL.BindGPUFragmentTextures(pass, 0, material.Textures, _temporarySampler);
             SDL.BindGPUVertexBuffer(pass, 0, renderable.VertexBuffer);
             SDL.BindGPUIndexBuffer(pass, renderable.IndexBuffer, SDL.GPUIndexElementSize.Size32bit);
 
@@ -93,6 +116,6 @@ internal sealed class ForwardPlusRenderer : IRenderer3D
 
     public void Dispose()
     {
-        
+        SDL.ReleaseGPUSampler(_context.Device, _temporarySampler);
     }
 }

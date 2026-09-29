@@ -19,6 +19,8 @@ public abstract class Material : IDisposable
     internal readonly SDL.GPUGraphicsPipeline Pipeline;
 
     public readonly MaterialInfo Info;
+    
+    protected internal abstract ReadOnlySpan<Texture> Textures { get; }
 
     protected unsafe Material(string shader, ref readonly MaterialInfo info)
     {
