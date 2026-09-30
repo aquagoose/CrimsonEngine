@@ -27,7 +27,7 @@ public class Skybox : IDisposable
             Type = SDL.GPUTextureType.TypeCube,
             Width = size.Width,
             Height = size.Height,
-            LayerCountOrDepth = 1,
+            LayerCountOrDepth = 6,
             Format = format.ToSDL(),
             NumLevels = 1,
             SampleCount = SDL.GPUSampleCount.Count1,
@@ -63,10 +63,55 @@ public class Skybox : IDisposable
 
         Logger.Trace($"Uploading {totalDataSize / 1024}KiB data to cubemap.");
         SDL.GPUCommandBuffer cb = SDL.AcquireGPUCommandBuffer(_context.Device).Check("Acquire command buffer");
+
+        SDL.GPUCopyPass pass = SDL.BeginGPUCopyPass(cb).Check("Begin copy pass");
+
+        SDL.GPUTextureTransferInfo src = new()
+        {
+            TransferBuffer = transBuffer,
+            Offset = offset,
+            PixelsPerRow = size.Width,
+            RowsPerLayer = size.Height
+        };
         
-        //SDL.GPUTransfer
+        SDL.GPUTextureRegion dest = new()
+        {
+            Texture = _cubemap,
+            X = 0,
+            Y = 0,
+            Z = 0,
+            W = size.Width,
+            H = size.Height,
+            D = 1,
+            Layer = 0,
+            MipLevel = 0
+        };
+        
+        SDL.UploadToGPUTexture(pass, &src, &dest, false);
+        src.Offset += dataSize;
+        dest.Layer++;
+        SDL.UploadToGPUTexture(pass, &src, &dest, false);
+        src.Offset += dataSize;
+        dest.Layer++;
+        SDL.UploadToGPUTexture(pass, &src, &dest, false);
+        src.Offset += dataSize;
+        dest.Layer++;
+        SDL.UploadToGPUTexture(pass, &src, &dest, false);
+        src.Offset += dataSize;
+        dest.Layer++;
+        SDL.UploadToGPUTexture(pass, &src, &dest, false);
+        src.Offset += dataSize;
+        dest.Layer++;
+        SDL.UploadToGPUTexture(pass, &src, &dest, false);
+        
+        SDL.EndGPUCopyPass(pass);
+        SDL.SubmitGPUCommandBuffer(cb).Check("Submit command buffer");
     }
-    
+
+    public Skybox(string left, string right, string top, string bottom, string front, string back) : this(
+        new Bitmap(left), new Bitmap(right), new Bitmap(top), new Bitmap(bottom), new Bitmap(front),
+        new Bitmap(back)) { }
+
     public void Dispose()
     {
         SDL.ReleaseGPUTexture(_context.Device, _cubemap);

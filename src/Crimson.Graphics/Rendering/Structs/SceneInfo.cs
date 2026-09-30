@@ -1,10 +1,10 @@
 namespace Crimson.Graphics.Rendering.Structs;
 
-internal readonly struct SceneInfo
+internal readonly ref struct SceneInfo
 {
-    public readonly Camera Camera;
+    public readonly ShaderCamera Camera;
 
-    public SceneInfo(Camera camera)
+    public SceneInfo(ShaderCamera camera)
     {
         Camera = camera;
     }

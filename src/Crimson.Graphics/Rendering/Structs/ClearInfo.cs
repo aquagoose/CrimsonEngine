@@ -1,8 +1,8 @@
 namespace Crimson.Graphics.Rendering.Structs;
 
-internal struct ClearInfo
+internal ref struct ClearInfo
 {
-    public Color Color;
+    public readonly Color Color;
 
     public bool HasCleared;
 

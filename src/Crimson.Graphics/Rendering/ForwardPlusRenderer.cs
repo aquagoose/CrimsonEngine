@@ -59,7 +59,7 @@ internal sealed class ForwardPlusRenderer : IDisposable
         // sort opaques front to back, and everything else back to front
         _opaques.Sort(_ftbComparison);
 
-        SceneInfo scene = new SceneInfo(camera);
+        SceneInfo scene = new SceneInfo(new ShaderCamera(camera));
         SDL.PushGPUVertexUniformData(cb, 0, (nint) (&scene), (uint) sizeof(SceneInfo));
         
         SDL.GPUColorTargetInfo colorTargetInfo = new()

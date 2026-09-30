@@ -13,8 +13,6 @@ public struct Camera
 
     public Vector3 Position;
 
-    private float _padding1;
-
     public Camera(Matrix4x4 projection, Matrix4x4 view, Size<uint> viewportSize, Vector3 position)
     {
         Projection = projection;
