@@ -124,7 +124,7 @@ internal sealed class RenderContext : IDisposable
                         NumStorageBuffers = resources.NumStorageTextures
                     };
 
-                    Logger.Trace($"Creating shader \"{shader}\"");
+                    Logger.Trace($"Creating {stage} shader \"{shader}\"");
                     return SDL.CreateGPUShader(Device, &shaderInfo).Check("Create shader");
                 }
             }
@@ -140,7 +140,7 @@ internal sealed class RenderContext : IDisposable
                     ShaderStage = (SDLShaderCross.ShaderStage) stage
                 };
 
-                Logger.Trace($"Creating shader \"{shader}\"");
+                Logger.Trace($"Creating {stage} shader \"{shader}\"");
                 return SDLShaderCross.CompileGraphicsShaderFromSPIRV(Device, &spirvInfo, &resources, 0)
                     .Check("Compile shader from spirv");
             }

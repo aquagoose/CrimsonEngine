@@ -8,6 +8,8 @@
 #define PixelUniform(type, name, binding) __UNIFORM(type, name, binding, 3)
 
 #define VertexSampler2D(name, binding) __TEXTURE(2D, name, binding, 0)
+#define VertexSamplerCube(name, binding) __TEXTURE(Cube, name, binding, 0)
 #define PixelSampler2D(name, binding) __TEXTURE(2D, name, binding, 2)
+#define PixelSamplerCube(name, binding) __TEXTURE(Cube, name, binding, 2)
 
 #define SampleTexture(texture, texCoord) texture.Sample(texture##Sampler, texCoord)

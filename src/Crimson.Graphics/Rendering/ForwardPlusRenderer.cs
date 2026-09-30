@@ -55,6 +55,9 @@ internal sealed class ForwardPlusRenderer : IDisposable
     public unsafe void Render(SDL.GPUCommandBuffer cb, SDL.GPUTexture colorTarget, SDL.GPUTexture depthTarget,
         Size<uint> viewportSize, ref readonly Camera camera, ref ClearInfo clear)
     {
+        if (_opaques.Count == 0)
+            return;
+        
         _currentCamera = camera;
         // sort opaques front to back, and everything else back to front
         _opaques.Sort(_ftbComparison);

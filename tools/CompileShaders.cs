@@ -50,6 +50,7 @@ bool CompileShader(string file, string outFile, string profile, string entryPoin
 {
     ProcessStartInfo startInfo = new ProcessStartInfo("dxc");
     startInfo.ArgumentList.Add("-spirv");
+    startInfo.ArgumentList.Add("-WX"); // treat all warnings as errors
     startInfo.ArgumentList.Add("-Fo");
     startInfo.ArgumentList.Add(outFile);
     startInfo.ArgumentList.Add("-T");

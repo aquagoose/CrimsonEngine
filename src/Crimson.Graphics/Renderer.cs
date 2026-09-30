@@ -185,6 +185,7 @@ public static class Renderer
         {
             ref readonly Camera camera = ref cameras[i];
             _renderer.Render(cb, swapchainTexture, _depthTarget, camera.ViewportSize, in camera, ref clearInfo);
+            camera.Skybox?.Render(cb, swapchainTexture, _depthTarget, camera.ViewportSize, in camera, ref clearInfo);
         }
 
         Camera uiCamera = new()

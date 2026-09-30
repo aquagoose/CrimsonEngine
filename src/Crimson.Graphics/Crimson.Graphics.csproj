@@ -20,6 +20,7 @@
     </ItemGroup>
 
     <ItemGroup>
+      <ClCompile Include="Shaders\Environment\Skybox.hlsl" />
       <ClCompile Include="Shaders\Materials\Unlit.hlsl" />
     </ItemGroup>
 
