@@ -31,9 +31,9 @@ internal sealed class RenderContext : IDisposable
 
         uint createProps = SDL.CreateProperties();
 
-        if (OperatingSystem.IsWindows()) // enable dx12 on windows
-            SDL.SetBooleanProperty(createProps, SDL.Prop.GpuDeviceCreateShadersDxilBoolean, true);
-        else if (OperatingSystem.IsMacOS()) // enable metal on macos
+        //if (OperatingSystem.IsWindows()) // enable dx12 on windows
+        //    SDL.SetBooleanProperty(createProps, SDL.Prop.GpuDeviceCreateShadersDxilBoolean, true);
+        /*else*/ if (OperatingSystem.IsMacOS()) // enable metal on macos
             SDL.SetBooleanProperty(createProps, SDL.Prop.GpuDeviceCreateShadersMslBoolean, true);
         else // enable vulkan on everything else
             SDL.SetBooleanProperty(createProps, SDL.Prop.GpuDeviceCreateShadersSpirvBoolean, true);

@@ -64,7 +64,7 @@ public class Skybox : IDisposable
         Logger.Trace($"Uploading {totalDataSize / 1024}KiB data to cubemap.");
         SDL.GPUCommandBuffer cb = SDL.AcquireGPUCommandBuffer(_context.Device).Check("Acquire command buffer");
         
-        SDL.GPUTransfer
+        //SDL.GPUTransfer
     }
     
     public void Dispose()
