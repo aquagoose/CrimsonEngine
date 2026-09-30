@@ -39,7 +39,7 @@ namespace cge
                 break;
         }
 
-        auto fileName = std::filesystem::path(location.file_name()).filename().c_str();
+        auto fileName = std::filesystem::path(location.file_name()).filename().string();
         _ss << '(' << fileName << ':' << location.line() << ") ";
         _ss << message;
 
