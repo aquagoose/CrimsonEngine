@@ -9,7 +9,7 @@ using piko.SDL3;
 
 namespace Crimson.Graphics.Rendering;
 
-internal sealed class ForwardPlusRenderer : IRenderer3D
+internal sealed class ForwardPlusRenderer : IDisposable
 {
     private readonly RenderContext _context;
     

@@ -47,12 +47,6 @@ public sealed class Texture : IDisposable
         Size = size;
         Format = format;
 
-        SDL.GPUTextureFormat textureFormat = format switch
-        {
-            PixelFormat.RGBA8 => SDL.GPUTextureFormat.R8g8b8a8Unorm,
-            _ => throw new ArgumentOutOfRangeException(nameof(format), format, null)
-        };
-
         uint mipLevels = 1;
         SDL.GPUTextureUsageFlags usage = SDL.GPUTextureUsageFlags.Sampler;
         if (generateMips)
@@ -64,7 +58,7 @@ public sealed class Texture : IDisposable
         SDL.GPUTextureCreateInfo textureInfo = new()
         {
             Type = SDL.GPUTextureType.Type2d,
-            Format = textureFormat,
+            Format = format.ToSDL(),
             Width = size.Width,
             Height = size.Height,
             LayerCountOrDepth = 1,

@@ -47,6 +47,15 @@ internal static class SDLUtils
     public static SDL.FColor ToFColor(this Color color)
         => new SDL.FColor(color.R, color.G, color.B, color.A);
 
+    public static SDL.GPUTextureFormat ToSDL(this PixelFormat format)
+    {
+        return format switch
+        {
+            PixelFormat.RGBA8 => SDL.GPUTextureFormat.R8g8b8a8Unorm,
+            _ => throw new ArgumentOutOfRangeException(nameof(format), format, null)
+        };
+    }
+
     public static uint CalculateNumMips(uint width, uint height)
         => (uint) double.Floor(double.Log2(double.Max(width, height))) + 1;
 
