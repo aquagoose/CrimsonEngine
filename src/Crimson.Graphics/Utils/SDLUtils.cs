@@ -56,6 +56,36 @@ internal static class SDLUtils
         };
     }
 
+    public static SDL.GPUFilter ToSDLFilter(this Filter filter)
+    {
+        return filter switch
+        {
+            Filter.Linear => SDL.GPUFilter.Linear,
+            Filter.Nearest => SDL.GPUFilter.Nearest,
+            _ => throw new ArgumentOutOfRangeException(nameof(filter), filter, null)
+        };
+    }
+
+    public static SDL.GPUSamplerMipmapMode ToSDLMipmapMode(this Filter filter)
+    {
+        return filter switch
+        {
+            Filter.Linear => SDL.GPUSamplerMipmapMode.Linear,
+            Filter.Nearest => SDL.GPUSamplerMipmapMode.Nearest,
+            _ => throw new ArgumentOutOfRangeException(nameof(filter), filter, null)
+        };
+    }
+
+    public static SDL.GPUSamplerAddressMode ToSDL(this AddressMode mode)
+    {
+        return mode switch
+        {
+            AddressMode.Repeat => SDL.GPUSamplerAddressMode.Repeat,
+            AddressMode.Clamp => SDL.GPUSamplerAddressMode.ClampToEdge,
+            _ => throw new ArgumentOutOfRangeException(nameof(mode), mode, null)
+        };
+    }
+
     public static uint CalculateNumMips(uint width, uint height)
         => (uint) double.Floor(double.Log2(double.Max(width, height))) + 1;
 
@@ -89,11 +119,11 @@ internal static class SDLUtils
 
         // todo sampler should be integrated into texture
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
-        public static unsafe void BindGPUFragmentTextures(SDL.GPURenderPass pass, uint firstSlot, ReadOnlySpan<Texture> textures, SDL.GPUSampler temporarySampler)
+        public static unsafe void BindGPUFragmentTextures(SDL.GPURenderPass pass, uint firstSlot, ReadOnlySpan<Texture> textures)
         {
             SDL.GPUTextureSamplerBinding* bindings = stackalloc SDL.GPUTextureSamplerBinding[textures.Length];
             for (int i = 0; i < textures.Length; i++)
-                bindings[i] = new SDL.GPUTextureSamplerBinding(textures[i].TextureHandle, temporarySampler);
+                bindings[i] = new SDL.GPUTextureSamplerBinding(textures[i].TextureHandle, textures[i].SamplerHandle);
             
             SDL.BindGPUFragmentSamplers(pass, firstSlot, bindings, (uint) textures.Length);
         }

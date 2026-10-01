@@ -32,7 +32,6 @@ internal sealed unsafe class TextureBatcher : IDisposable
     private readonly List<Batch> _batches;
     
     private readonly SDL.GPUGraphicsPipeline _pipeline;
-    private readonly SDL.GPUSampler _tempSampler; // todo sampler per texture
     
     private SDL.GPUBuffer _vertexBuffer;
     private SDL.GPUBuffer _indexBuffer;
@@ -124,21 +123,6 @@ internal sealed unsafe class TextureBatcher : IDisposable
         
         SDL.ReleaseGPUShader(_context.Device, pixelShader);
         SDL.ReleaseGPUShader(_context.Device, vertexShader);
-
-        SDL.GPUSamplerCreateInfo samplerInfo = new()
-        {
-            MinFilter = SDL.GPUFilter.Linear,
-            MagFilter = SDL.GPUFilter.Linear,
-            MipmapMode = SDL.GPUSamplerMipmapMode.Linear,
-            AddressModeU = SDL.GPUSamplerAddressMode.ClampToEdge,
-            AddressModeV = SDL.GPUSamplerAddressMode.ClampToEdge,
-            AddressModeW = SDL.GPUSamplerAddressMode.ClampToEdge,
-            MinLod = 0,
-            MaxLod = float.MaxValue
-        };
-
-        Logger.Trace("Creating temporary sampler.");
-        _tempSampler = SDL.CreateGPUSampler(_context.Device, &samplerInfo).Check("Create sampler");
     }
 
     public void Clear()
@@ -282,7 +266,7 @@ internal sealed unsafe class TextureBatcher : IDisposable
         for (int i = 0; i < batches.Length; i++)
         {
             ref readonly Batch batch = ref batches[i];
-            SDL.BindGPUFragmentTextures(renderPass, 0, [batch.Texture], _tempSampler);
+            SDL.BindGPUFragmentTextures(renderPass, 0, [batch.Texture]);
             SDL.DrawGPUIndexedPrimitives(renderPass, batch.Size * NumIndices, 1, batch.Offset * NumIndices, 0, 0);
         }
         
@@ -296,7 +280,6 @@ internal sealed unsafe class TextureBatcher : IDisposable
 
     public void Dispose()
     {
-        SDL.ReleaseGPUSampler(_context.Device, _tempSampler);
         SDL.ReleaseGPUGraphicsPipeline(_context.Device, _pipeline);
         SDL.ReleaseGPUBuffer(_context.Device, _indexBuffer);
         SDL.ReleaseGPUBuffer(_context.Device, _vertexBuffer);

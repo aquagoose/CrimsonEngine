@@ -24,6 +24,7 @@ class SkyboxTest : Application
             "Content/Skybox/bottom.jpg", "Content/Skybox/front.jpg", "Content/Skybox/back.jpg");
 
         _texture = new Texture("Content/DEBUG.png");
+        _texture.Sampler = Sampler.NearestRepeat;
         _material = new UnlitMaterial(_texture);
         _renderable = new Renderable(new Cube(), _material);
         
@@ -39,9 +40,9 @@ class SkyboxTest : Application
         float pitch = float.Sin(_value * 0.4f) * 0.75f;
         float yaw = _value;
 
-        const float distance = 10;
+        const float distance = 5;
         Quaternion euler = Quaternion.CreateFromYawPitchRoll(yaw, pitch, 0);
-        Vector3 position = new Vector3(distance * float.Cos(pitch) * float.Sin(yaw), distance * float.Sin(-pitch), distance * float.Cos(pitch) * float.Cos(yaw));
+        Vector3 position = new Vector3(float.Cos(pitch) * float.Sin(yaw), float.Sin(-pitch), float.Cos(pitch) * float.Cos(yaw)) * distance;
         Vector3 forward = Vector3.Transform(-Vector3.UnitZ, euler);
         Vector3 up = Vector3.Transform(Vector3.UnitY, euler);
 

@@ -20,6 +20,7 @@ public sealed class Texture : IDisposable
     private readonly bool _generateMips;
 
     internal readonly SDL.GPUTexture TextureHandle;
+    internal SDL.GPUSampler SamplerHandle;
 
     /// <summary>
     /// The size in pixels.
@@ -30,6 +31,19 @@ public sealed class Texture : IDisposable
     /// The <see cref="PixelFormat"/> of the data contained by the texture.
     /// </summary>
     public readonly PixelFormat Format;
+
+    /// <summary>
+    /// Get or set the <see cref="Graphics.Sampler"/> associated with the texture.
+    /// </summary>
+    public Sampler Sampler
+    {
+        get => field;
+        set
+        {
+            field = value;
+            SamplerHandle = _context.GetSampler(value);
+        }
+    }
 
     /// <summary>
     /// Create a <see cref="Texture"/> from pixel data.
@@ -69,6 +83,8 @@ public sealed class Texture : IDisposable
 
         Logger.Trace($"Creating {size} texture.");
         TextureHandle = SDL.CreateGPUTexture(_context.Device, &textureInfo).Check("Create texture");
+
+        Sampler = Sampler.LinearRepeat;
 
         if (data == null)
             return;

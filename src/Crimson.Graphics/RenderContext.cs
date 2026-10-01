@@ -16,6 +16,8 @@ internal sealed class RenderContext : IDisposable
     /// </summary>
     private const uint InitialTranferBufferSize = 32 * 1024 * 1024;
 
+    private Dictionary<Sampler, SDL.GPUSampler> _samplers;
+    
     private SDL.GPUTransferBuffer _transferBuffer;
     private uint _transferBufferSize;
     private uint _transferBufferOffset;
@@ -28,6 +30,7 @@ internal sealed class RenderContext : IDisposable
     public RenderContext(SDL.Window window)
     {
         Window = window;
+        _samplers = [];
 
         uint createProps = SDL.CreateProperties();
 
@@ -184,6 +187,29 @@ internal sealed class RenderContext : IDisposable
         return SDL.CreateGPUTransferBuffer(Device, &bufferInfo).Check("Create transfer buffer");
     }
 
+    public unsafe SDL.GPUSampler GetSampler(ref readonly Sampler sampler)
+    {
+        if (_samplers.TryGetValue(sampler, out SDL.GPUSampler samplerHandle))
+            return samplerHandle;
+
+        SDL.GPUSamplerCreateInfo samplerInfo = new()
+        {
+            MinFilter = sampler.MinFilter.ToSDLFilter(),
+            MagFilter = sampler.MagFilter.ToSDLFilter(),
+            MipmapMode = sampler.MipFilter.ToSDLMipmapMode(),
+            AddressModeU = sampler.AddressU.ToSDL(),
+            AddressModeV = sampler.AddressV.ToSDL(),
+            MinLod = 0,
+            MaxLod = float.MaxValue
+        };
+
+        Logger.Trace("Creating sampler.");
+        samplerHandle = SDL.CreateGPUSampler(Device, &samplerInfo);
+        _samplers.Add(sampler, samplerHandle);
+
+        return samplerHandle;
+    }
+
     public SDL.GPUTransferBuffer GetUploadBuffer(uint size, out uint offset, out bool shouldCycle)
     {
         if (size >= _transferBufferSize)
@@ -286,6 +312,9 @@ internal sealed class RenderContext : IDisposable
 
     public void Dispose()
     {
+        foreach ((_, SDL.GPUSampler sampler) in _samplers)
+            SDL.ReleaseGPUSampler(Device, sampler);
+        
         SDL.ReleaseGPUTransferBuffer(Device, _transferBuffer);
         SDL.ReleaseWindowFromGPUDevice(Device, Window);
         SDL.DestroyGPUDevice(Device);

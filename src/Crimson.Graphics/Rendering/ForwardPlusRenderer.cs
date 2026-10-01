@@ -16,8 +16,6 @@ internal sealed class ForwardPlusRenderer : IDisposable
     private readonly List<Draw> _opaques;
     private readonly Comparison<Draw> _ftbComparison;
     private Camera _currentCamera;
-
-    private readonly SDL.GPUSampler _temporarySampler;
     
     public unsafe ForwardPlusRenderer(RenderContext context)
     {
@@ -25,21 +23,6 @@ internal sealed class ForwardPlusRenderer : IDisposable
         
         _opaques = [];
         _ftbComparison = CompareDrawsFTB;
-
-        SDL.GPUSamplerCreateInfo samplerInfo = new()
-        {
-            MinFilter = SDL.GPUFilter.Linear,
-            MagFilter = SDL.GPUFilter.Linear,
-            MipmapMode = SDL.GPUSamplerMipmapMode.Linear,
-            AddressModeU = SDL.GPUSamplerAddressMode.ClampToEdge,
-            AddressModeV = SDL.GPUSamplerAddressMode.ClampToEdge,
-            AddressModeW = SDL.GPUSamplerAddressMode.ClampToEdge,
-            MinLod = 0,
-            MaxLod = float.MaxValue
-        };
-        
-        Logger.Trace("Creating temporary sampler.");
-        _temporarySampler = SDL.CreateGPUSampler(_context.Device, &samplerInfo).Check("Create sampler");
     }
 
     public void Clear()
@@ -94,7 +77,7 @@ internal sealed class ForwardPlusRenderer : IDisposable
                 SDL.PushGPUVertexUniformData(cb, 1, (nint) worldMatrix, (uint) sizeof(Matrix4x4));
             
             SDL.BindGPUGraphicsPipeline(pass, material.Pipeline);
-            SDL.BindGPUFragmentTextures(pass, 0, material.Textures, _temporarySampler);
+            SDL.BindGPUFragmentTextures(pass, 0, material.Textures);
             SDL.BindGPUVertexBuffer(pass, 0, renderable.VertexBuffer);
             SDL.BindGPUIndexBuffer(pass, renderable.IndexBuffer, SDL.GPUIndexElementSize.Size32bit);
 
@@ -125,8 +108,5 @@ internal sealed class ForwardPlusRenderer : IDisposable
         }
     }
 
-    public void Dispose()
-    {
-        SDL.ReleaseGPUSampler(_context.Device, _temporarySampler);
-    }
+    public void Dispose() { }
 }
