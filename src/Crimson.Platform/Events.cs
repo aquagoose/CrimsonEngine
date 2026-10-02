@@ -34,7 +34,9 @@ public static class Events
                     break;
                 case SDL.EventType.WindowResized:
                 {
-                    Size<uint> newSize = new Size<uint>((uint) e.Window.Data1, (uint) e.Window.Data2);
+                    SDL.Window window = SDL.GetWindowFromID(e.Window.WindowID);
+                    SDL.GetWindowSizeInPixels(window, out int w, out int h);
+                    Size<uint> newSize = new Size<uint>((uint) w, (uint) h);
                     Resized(newSize);
                     break;
                 }
