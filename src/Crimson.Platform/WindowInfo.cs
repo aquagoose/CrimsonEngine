@@ -22,10 +22,16 @@ public struct WindowInfo
     /// </summary>
     public bool Resizable;
 
-    public WindowInfo(string title, Size<uint> size, bool resizable)
+    /// <summary>
+    /// If the window should open in borderless fullscreen mode.
+    /// </summary>
+    public bool Fullscreen;
+
+    public WindowInfo(string title, Size<uint> size, bool resizable, bool fullscreen)
     {
         Title = title;
         Size = size;
         Resizable = resizable;
+        Fullscreen = fullscreen;
     }
 }

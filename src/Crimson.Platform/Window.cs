@@ -1,6 +1,7 @@
 ﻿using System.Diagnostics;
 using System.Reflection;
 using Crimson.Core;
+using Crimson.Math;
 using piko.SDL3;
 
 namespace Crimson.Platform;
@@ -18,7 +19,54 @@ public static class Window
     
     private static SDL.Window _window;
 
+    /// <summary>
+    /// Gets the SDL3 window handle.
+    /// </summary>
     public static nint Handle => _window.Handle;
+
+    /// <summary>
+    /// Get or set the window size in window coordinates. This may not be representative of actual the window size.
+    /// Use <see cref="SizeInPixels"/> to get the actual window size.
+    /// </summary>
+    public static Size<uint> Size
+    {
+        get
+        {
+            SDL.GetWindowSize(_window, out int w, out int h);
+            return new Size<uint>((uint) w, (uint) h);
+        }
+        set => SDL.SetWindowSize(_window, (int) value.Width, (int) value.Height);
+    }
+
+    /// <summary>
+    /// Get the window size in pixels.
+    /// </summary>
+    public static Size<uint> SizeInPixels
+    {
+        get
+        {
+            SDL.GetWindowSizeInPixels(_window, out int w, out int h);
+            return new Size<uint>((uint) w, (uint) h);
+        }
+    }
+
+    /// <summary>
+    /// Get or set the window title.
+    /// </summary>
+    public static string Title
+    {
+        get => SDL.GetWindowTitle(_window);
+        set => SDL.SetWindowTitle(_window, value);
+    }
+
+    /// <summary>
+    /// Get or set if the window can be resized by the user.
+    /// </summary>
+    public static bool Resizable
+    {
+        get => (SDL.GetWindowFlags(_window) & SDL.WindowFlags.Resizable) != 0;
+        set => SDL.SetWindowResizable(_window, value);
+    }
 
     /// <summary>
     /// Initialize the window.
@@ -30,13 +78,28 @@ public static class Window
         
         if (!SDL.Init(SDL.InitFlags.Video))
             throw new Exception($"Failed to initialize SDL: {SDL.GetError()}");
+
+        // a size of zero tells the engine to auto-decide what size to use.
+        // in debug mode we usually want it as a window, so a 1280x720 window will do.
+        // in release, we usually want fullscreen.
+        Size<uint> size = info.Size;
+        bool fullscreen = info.Fullscreen;
+        if (size == Size<uint>.Zero)
+        {
+#if DEBUG
+            size = new Size<uint>(1280, 720);
+#else
+            fullscreen = true;
+#endif
+        }
         
         uint windowProps = SDL.CreateProperties();
         SDL.SetBooleanProperty(windowProps, SDL.Prop.WindowCreateHiddenBoolean, true);
         SDL.SetStringProperty(windowProps, SDL.Prop.WindowCreateTitleString, info.Title);
-        SDL.SetNumberProperty(windowProps, SDL.Prop.WindowCreateWidthNumber, info.Size.Width);
-        SDL.SetNumberProperty(windowProps, SDL.Prop.WindowCreateHeightNumber, info.Size.Height);
+        SDL.SetNumberProperty(windowProps, SDL.Prop.WindowCreateWidthNumber, size.Width);
+        SDL.SetNumberProperty(windowProps, SDL.Prop.WindowCreateHeightNumber, size.Height);
         SDL.SetBooleanProperty(windowProps, SDL.Prop.WindowCreateResizableBoolean, info.Resizable);
+        SDL.SetBooleanProperty(windowProps, SDL.Prop.WindowCreateFullscreenBoolean, fullscreen);
         SDL.SetBooleanProperty(windowProps, SDL.Prop.WindowCreateHighPixelDensityBoolean, true);
         
         Logger.Trace("Creating window.");

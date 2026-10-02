@@ -5,8 +5,10 @@ namespace Crimson.Math;
 /// <summary>
 /// A 2-dimensional Size with a width and height.
 /// </summary>
-public struct Size<T> where T : INumber<T>
+public struct Size<T> : IEquatable<Size<T>> where T : INumber<T>
 {
+    public static Size<T> Zero => new Size<T>(T.Zero);
+    
     /// <summary>
     /// The width.
     /// </summary>
@@ -43,4 +45,30 @@ public struct Size<T> where T : INumber<T>
     /// </summary>
     public override string ToString()
         => $"{Width}x{Height}";
+
+    public bool Equals(Size<T> other)
+    {
+        return EqualityComparer<T>.Default.Equals(Width, other.Width) &&
+               EqualityComparer<T>.Default.Equals(Height, other.Height);
+    }
+
+    public override bool Equals(object? obj)
+    {
+        return obj is Size<T> other && Equals(other);
+    }
+
+    public override int GetHashCode()
+    {
+        return HashCode.Combine(Width, Height);
+    }
+
+    public static bool operator ==(Size<T> left, Size<T> right)
+    {
+        return left.Equals(right);
+    }
+
+    public static bool operator !=(Size<T> left, Size<T> right)
+    {
+        return !left.Equals(right);
+    }
 }

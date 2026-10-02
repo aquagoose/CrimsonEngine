@@ -12,9 +12,9 @@ namespace Crimson.Engine;
 /// </summary>
 public static class App
 {
-    private static string _appName;
-    private static string _appVersion;
-    private static Application _application;
+    private static string _appName = null!;
+    private static string _appVersion = null!;
+    private static Application _application = null!;
     private static bool _isRunning;
     
     /// <summary>
@@ -73,7 +73,7 @@ public static class App
         TicksPerSecond = 60; // todo add this to AppInfo
         
         Logger.Debug("Initializing window.");
-        Window.Init(new WindowInfo(info.Name, new Size<uint>(1280, 720), true)); // todo window options in appinfo
+        Window.Init(in info.Window);
         
         Logger.Debug("Initializing events.");
         Events.Init();
