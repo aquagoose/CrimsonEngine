@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using Crimson.Core;
 using Crimson.Graphics.Rendering;
@@ -106,20 +107,75 @@ public static class Renderer
         => _cameras.Add(camera);
 
     /// <summary>
+    /// Draw a 2D image with custom coordinates.
+    /// </summary>
+    /// <param name="texture">The <see cref="Texture"/> to use as the image.</param>
+    /// <param name="topLeft">The top left coordinate.</param>
+    /// <param name="topRight">The top right coordinate.</param>
+    /// <param name="bottomLeft">The bottom left coordinate.</param>
+    /// <param name="bottomRight">The bottom right coordinate.</param>
+    /// <param name="tint">The color the image should be tinted with, if any.</param>
+    /// <remarks>The origin point is the top left of the texture.</remarks>
+    public static void DrawImage(Texture texture, Vector2 topLeft, Vector2 topRight, Vector2 bottomLeft,
+        Vector2 bottomRight, Color? tint = null)
+    {
+        Debug.Assert(IsInitialized, "The renderer has not been initialized!");
+
+        TextureBatcher.Draw draw =
+            new TextureBatcher.Draw(texture, topLeft, topRight, bottomLeft, bottomRight, tint ?? Color.White);
+        
+        _uiBatcher.AddToBatch(in draw);
+    }
+    
+    /// <summary>
+    /// Draw a 2D image.
+    /// </summary>
+    /// <param name="texture">The <see cref="Texture"/> to use as the image.</param>
+    /// <param name="position">The position, in pixels, to draw at.</param>
+    /// <param name="size">The size in pixels that the image should be drawn at.</param>
+    /// <param name="tint">The color the image should be tinted with, if any.</param>
+    /// <remarks>The origin point is the top left of the texture.</remarks>
+    public static void DrawImage(Texture texture, Vector2 position, Size<uint> size, Color? tint = null)
+    {
+        Debug.Assert(IsInitialized, "The renderer has not been initialized!");
+        
+        Vector2 topLeft = position;
+        Vector2 topRight = position + new Vector2(size.Width, 0);
+        Vector2 bottomLeft = position + new Vector2(0, size.Height);
+        Vector2 bottomRight = position + new Vector2(size.Width, size.Height);
+
+        TextureBatcher.Draw draw =
+            new TextureBatcher.Draw(texture, topLeft, topRight, bottomLeft, bottomRight, tint ?? Color.White);
+        
+        _uiBatcher.AddToBatch(in draw);
+    }
+
+    /// <summary>
     /// Draw a 2D image.
     /// </summary>
     /// <param name="texture">The <see cref="Texture"/> to use as the image.</param>
     /// <param name="position">The position, in pixels, to draw at.</param>
     /// <param name="tint">The color the image should be tinted with, if any.</param>
     /// <remarks>The origin point is the top left of the texture.</remarks>
+    [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static void DrawImage(Texture texture, Vector2 position, Color? tint = null)
+        => DrawImage(texture, position, texture.Size, tint);
+
+    /// <summary>
+    /// Draw a 2D image, transformed by the matrix.
+    /// </summary>
+    /// <param name="texture">The <see cref="Texture"/> to use as the image.</param>
+    /// <param name="transform">The transformation to apply to the image.</param>
+    /// <param name="tint">The color the image should be tinted with, if any.</param>
+    public static void DrawImage(Texture texture, Matrix3x2 transform, Color? tint = null)
     {
         Debug.Assert(IsInitialized, "The renderer has not been initialized!");
-        
-        Vector2 topLeft = position;
-        Vector2 topRight = position + new Vector2(texture.Size.Width, 0);
-        Vector2 bottomLeft = position + new Vector2(0, texture.Size.Height);
-        Vector2 bottomRight = position + new Vector2(texture.Size.Width, texture.Size.Height);
+
+        // all translations are done in the matrix, so our starting position must be zero.
+        Vector2 topLeft = Vector2.Transform(Vector2.Zero, transform);
+        Vector2 topRight = Vector2.Transform(new Vector2(texture.Size.Width, 0), transform);
+        Vector2 bottomLeft = Vector2.Transform(new Vector2(0, texture.Size.Height), transform);
+        Vector2 bottomRight = Vector2.Transform(new Vector2(texture.Size.Width, texture.Size.Height), transform);
 
         TextureBatcher.Draw draw =
             new TextureBatcher.Draw(texture, topLeft, topRight, bottomLeft, bottomRight, tint ?? Color.White);

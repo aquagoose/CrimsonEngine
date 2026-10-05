@@ -41,7 +41,7 @@ public sealed class Texture : IDisposable
         set
         {
             field = value;
-            SamplerHandle = _context.GetSampler(value);
+            SamplerHandle = _context.GetSampler(in value);
         }
     }
 
