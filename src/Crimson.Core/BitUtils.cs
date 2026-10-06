@@ -2,8 +2,15 @@ using System.Runtime.CompilerServices;
 
 namespace Crimson.Core;
 
+/// <summary>
+/// Utilities for bitwise operations.
+/// </summary>
 public static class BitUtils
 {
+    /// <summary>
+    /// Round a value to the next power of 2.
+    /// </summary>
+    /// <param name="value">The value to round.</param>
     [MethodImpl(MethodImplOptions.AggressiveInlining)]
     public static uint RoundToNextPowerOf2(uint value)
     {

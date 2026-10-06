@@ -3,18 +3,23 @@ using Crimson.Platform;
 
 namespace Crimson.Engine;
 
-public struct AppInfo
+/// <summary>
+/// Contains properties describing app creation.
+/// </summary>
+public struct AppInfo(string appName, string appVersion)
 {
-    public string Name;
+    /// <summary>
+    /// The name of the application.
+    /// </summary>
+    public string AppName = appName;
 
-    public string Version;
+    /// <summary>
+    /// The application version.
+    /// </summary>
+    public string AppVersion = appVersion;
 
-    public WindowInfo Window;
-
-    public AppInfo(string name, string version)
-    {
-        Name = name;
-        Version = version;
-        Window = new WindowInfo(name, Size<uint>.Zero, false, false);
-    }
+    /// <summary>
+    /// The <see cref="WindowInfo"/> to use when creating the window.
+    /// </summary>
+    public WindowInfo Window = new(appName, Size<uint>.Zero, false, false);
 }

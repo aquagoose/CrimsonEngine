@@ -54,8 +54,8 @@ public static class App
     /// </summary>
     public static void Run(in AppInfo info, Application? application = null)
     {
-        _appName = info.Name;
-        _appVersion = info.Version;
+        _appName = info.AppName;
+        _appVersion = info.AppVersion;
         _application = application ?? new Application();
         
         Logger.Info($"App Name: {_appName}");
