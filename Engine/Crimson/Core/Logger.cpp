@@ -7,7 +7,7 @@
 
 namespace cge
 {
-    std::stringstream _ss;
+    static std::stringstream _ss;
 
     void Logger::Log(LogSeverity severity, const std::string& message, std::source_location location)
     {
@@ -19,25 +19,32 @@ namespace cge
 
         _ss << std::format("{:%F %T} ", std::chrono::round<std::chrono::milliseconds>(now));
 
+        std::string ansiCode; // the ansi color code to use in stdout
         switch (severity)
         {
             case LogSeverity::Trace:
                 _ss << "[Trace] ";
+                ansiCode = "\e[90m"; // gray
                 break;
             case LogSeverity::Debug:
                 _ss << "[Debug] ";
+                ansiCode = "\e[0m"; // default terminal color
                 break;
             case LogSeverity::Info:
                 _ss << "[Info]  ";
+                ansiCode = "\e[96m"; // cyan
                 break;
             case LogSeverity::Warning:
                 _ss << "[Warn]  ";
+                ansiCode = "\e[93m"; // yellow
                 break;
             case LogSeverity::Error:
                 _ss << "[Error] ";
+                ansiCode = "\e[91m"; // red
                 break;
             case LogSeverity::Fatal:
                 _ss << "[FATAL] ";
+                ansiCode = "\e[31m"; // dark red
                 break;
         }
 
@@ -45,7 +52,7 @@ namespace cge
         _ss << message;
 
 #ifndef NDEBUG
-        std::cout << _ss.str() << std::endl;
+        std::cout << ansiCode << _ss.str() << "\e[0m" << std::endl;
 #endif
     }
 }
