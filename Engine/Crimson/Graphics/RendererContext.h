@@ -13,6 +13,7 @@ namespace cge
         VkSurfaceKHR _surface;
         VkPhysicalDevice _physicalDevice;
         VkDevice _device;
+        VkSwapchainKHR _swapchain{};
 
         u32 _graphicsQueueIndex;
         VkQueue _graphicsQueue;
@@ -20,6 +21,8 @@ namespace cge
         VkQueue _presentQueue;
         u32 _computeQueueIndex;
         VkQueue _computeQueue;
+
+        void RecreateSwapchain(u32 width, u32 height, VkPresentModeKHR presentMode);
 
     public:
         explicit RendererContext(SDL_Window* window);

@@ -9,9 +9,64 @@
 #include <unordered_set>
 
 #define CGE_VK_API_VERSION VK_API_VERSION_1_3
+#define CGE_VK_CLAMP(value, min, max) value < min ? min : value > max ? max : value
 
 namespace cge
 {
+    void RendererContext::RecreateSwapchain(u32 width, u32 height, VkPresentModeKHR presentMode)
+    {
+        VkSwapchainKHR oldSwapchain = _swapchain;
+
+        VkSurfaceCapabilitiesKHR surfaceCapabilities;
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_physicalDevice, _surface, &surfaceCapabilities);
+
+        CGE_TRACE("Requesting swapchain size {}x{}", width, height);
+
+        // clamp the width & height to within the supported range.
+        VkExtent2D extent
+        {
+            .width = CGE_VK_CLAMP(width, surfaceCapabilities.minImageExtent.width, surfaceCapabilities.maxImageExtent.width),
+            .height = CGE_VK_CLAMP(height, surfaceCapabilities.minImageExtent.height, surfaceCapabilities.maxImageExtent.height)
+        };
+
+        CGE_DEBUG("Swapchain size: {}x{}", extent.width, extent.height);
+
+        u32 imageCount = CGE_VK_CLAMP(2, surfaceCapabilities.minImageCount, surfaceCapabilities.maxImageCount);
+        CGE_DEBUG("Image Count: {}", imageCount);
+
+        /*u32 numPresentModes;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(_physicalDevice, _surface, &numPresentModes, nullptr);
+        std::vector<VkPresentModeKHR> presentModes(numPresentModes);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(_physicalDevice, _surface, &numPresentModes, presentModes.data());*/
+
+        VkSwapchainCreateInfoKHR swapchainInfo
+        {
+            .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+            .surface = _surface,
+            .minImageCount = imageCount,
+            .imageFormat = VK_FORMAT_B8G8R8A8_UNORM,
+            .imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
+            .imageExtent = extent,
+            .imageArrayLayers = 1,
+            .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+            .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+            .preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
+            .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+            .presentMode = presentMode, // todo check present mode is supported
+            .clipped = false,
+            .oldSwapchain = oldSwapchain
+        };
+
+        CGE_TRACE("Creating swapchain.");
+        CGE_VK_CHECK(vkCreateSwapchainKHR(_device, &swapchainInfo, nullptr, &_swapchain), "Create swapchain");
+
+        if (oldSwapchain)
+        {
+            CGE_TRACE("Destroying old swapchain.")
+            vkDestroySwapchainKHR(_device, oldSwapchain, nullptr);
+        }
+    }
+
     RendererContext::RendererContext(SDL_Window* window)
     {
         const char* appName = SDL_GetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING);
@@ -154,11 +209,19 @@ namespace cge
         vkGetDeviceQueue(_device, _graphicsQueueIndex, 0, &_graphicsQueue);
         vkGetDeviceQueue(_device, _presentQueueIndex, 0, &_presentQueue);
         vkGetDeviceQueue(_device, _computeQueueIndex, 0, &_computeQueue);
+
+        int width, height;
+        SDL_GetWindowSizeInPixels(window, &width, &height);
+        RecreateSwapchain(static_cast<u32>(width), static_cast<u32>(height), VK_PRESENT_MODE_FIFO_KHR);
     }
 
     RendererContext::~RendererContext()
     {
         vkDeviceWaitIdle(_device);
+
+        CGE_TRACE("Destroying swapchain.");
+        vkDestroySwapchainKHR(_device, _swapchain, nullptr);
+
         CGE_TRACE("Destroying device.");
         vkDestroyDevice(_device, nullptr);
 
