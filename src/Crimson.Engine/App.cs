@@ -77,7 +77,7 @@ public static class App
         
         Logger.Debug("Initializing events.");
         Events.Init();
-        Events.Quit += Quit;
+        Events.WindowClosed += WindowClosed;
         Events.Resized += Resize;
         
         Logger.Debug("Initializing renderer.");
@@ -107,7 +107,7 @@ public static class App
     /// <summary>
     /// Gracefully close and quit the application.
     /// </summary>
-    public static void Quit()
+    public static void WindowClosed()
     {
         _isRunning = false;
     }
