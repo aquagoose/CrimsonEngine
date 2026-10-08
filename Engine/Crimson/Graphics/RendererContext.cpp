@@ -125,10 +125,43 @@ namespace cge
         f32 queuePriority = 1.0f;
         for (u32 family : uniqueQueueFamilies)
             queueCreateInfos.emplace_back(VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, nullptr, 0, family, 1, &queuePriority);
+
+        VkPhysicalDeviceFeatures enabledFeatures{};
+
+        VkPhysicalDeviceDynamicRenderingFeatures dynamicRendering
+        {
+            .sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_DYNAMIC_RENDERING_FEATURES,
+            .dynamicRendering = true
+        };
+
+        std::vector deviceExtensions { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+
+        VkDeviceCreateInfo deviceInfo
+        {
+            .sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+            .pNext = &dynamicRendering,
+            .queueCreateInfoCount = static_cast<u32>(queueCreateInfos.size()),
+            .pQueueCreateInfos = queueCreateInfos.data(),
+            .enabledExtensionCount = static_cast<u32>(deviceExtensions.size()),
+            .ppEnabledExtensionNames = deviceExtensions.data(),
+            .pEnabledFeatures = &enabledFeatures
+        };
+
+        CGE_TRACE("Creating device.");
+        CGE_VK_CHECK(vkCreateDevice(_physicalDevice, &deviceInfo, nullptr, &_device), "Create device");
+
+        CGE_TRACE("Getting device queues.");
+        vkGetDeviceQueue(_device, _graphicsQueueIndex, 0, &_graphicsQueue);
+        vkGetDeviceQueue(_device, _presentQueueIndex, 0, &_presentQueue);
+        vkGetDeviceQueue(_device, _computeQueueIndex, 0, &_computeQueue);
     }
 
     RendererContext::~RendererContext()
     {
+        vkDeviceWaitIdle(_device);
+        CGE_TRACE("Destroying device.");
+        vkDestroyDevice(_device, nullptr);
+
         CGE_TRACE("Destroying surface.");
         SDL_Vulkan_DestroySurface(_instance, _surface, nullptr);
 
