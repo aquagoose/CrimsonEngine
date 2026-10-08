@@ -1,9 +1,12 @@
 #include "RendererContext.h"
+#include "Core/Logger.h"
+#include "Utils/VkUtils.h"
 
 #include <SDL3/SDL_vulkan.h>
 
-#include "Core/Logger.h"
-#include "Utils/VkUtils.h"
+#include <vector>
+#include <optional>
+#include <unordered_set>
 
 #define CGE_VK_API_VERSION VK_API_VERSION_1_3
 
@@ -47,10 +50,88 @@ namespace cge
 
         CGE_TRACE("Creating instance.");
         CGE_VK_CHECK(vkCreateInstance(&instanceInfo, nullptr, &_instance), "Create instance");
+
+        CGE_TRACE("Creating surface.");
+        if (!SDL_Vulkan_CreateSurface(window, _instance, nullptr, &_surface))
+            CGE_FATAL("Failed to create surface: {}", SDL_GetError());
+
+        CGE_TRACE("Enumerating physical devices.");
+        u32 numPhysicalDevices;
+        vkEnumeratePhysicalDevices(_instance, &numPhysicalDevices, nullptr);
+        std::vector<VkPhysicalDevice> physicalDevices(numPhysicalDevices);
+        vkEnumeratePhysicalDevices(_instance, &numPhysicalDevices, physicalDevices.data());
+
+        _physicalDevice = {};
+        for (const auto physicalDevice : physicalDevices)
+        {
+            VkPhysicalDeviceProperties deviceProps;
+            vkGetPhysicalDeviceProperties(physicalDevice, &deviceProps);
+
+            if (deviceProps.driverVersion < CGE_VK_API_VERSION)
+                continue;
+
+            _physicalDevice = physicalDevice;
+            break;
+        }
+
+        if (!_physicalDevice)
+            CGE_FATAL("No physical devices supporting Vulkan {} found!", VkUtils::APIVersionToString(CGE_VK_API_VERSION));
+
+        VkPhysicalDeviceProperties deviceProps;
+        vkGetPhysicalDeviceProperties(_physicalDevice, &deviceProps);
+
+        CGE_INFO("Using device: {} (vendor: {}, type: {})", deviceProps.deviceName, deviceProps.vendorID,
+                 VkUtils::PhysicalDeviceTypeToString(deviceProps.deviceType));
+
+        u32 numQueueFamilies;
+        vkGetPhysicalDeviceQueueFamilyProperties(_physicalDevice, &numQueueFamilies, nullptr);
+        std::vector<VkQueueFamilyProperties> queueFamilies(numQueueFamilies);
+        vkGetPhysicalDeviceQueueFamilyProperties(_physicalDevice, &numQueueFamilies, queueFamilies.data());
+
+        std::optional<u32> graphicsQueue;
+        std::optional<u32> presentQueue;
+        std::optional<u32> computeQueue;
+
+        for (u32 i = 0; i < queueFamilies.size(); i++)
+        {
+            const VkQueueFamilyProperties& family = queueFamilies[i];
+            if (family.queueFlags & VK_QUEUE_GRAPHICS_BIT)
+                graphicsQueue = i;
+            if (SDL_Vulkan_GetPresentationSupport(_instance, _physicalDevice, i))
+                presentQueue = i;
+            if (family.queueFlags & VK_QUEUE_COMPUTE_BIT)
+                computeQueue = i;
+
+            if (graphicsQueue && presentQueue && computeQueue)
+                break;
+        }
+
+        // crimson makes heavy use of compute for the forward+ renderer so we list compute as a requirement
+        // todo maybe 2D only games can remove the compute requirement?
+        if (!graphicsQueue || !presentQueue || !computeQueue)
+        {
+            CGE_FATAL("One or more required queues were not found! Graphics: {}, Present: {}, Compute: {}",
+                      graphicsQueue ? "Found" : "Not Found", presentQueue ? "Found" : "Not Found",
+                      computeQueue ? "Found" : "Not Found");
+        }
+
+        _graphicsQueueIndex = *graphicsQueue;
+        _presentQueueIndex = *presentQueue;
+        _computeQueueIndex = *computeQueue;
+
+        std::unordered_set uniqueQueueFamilies { _graphicsQueueIndex, _presentQueueIndex, _computeQueueIndex };
+        std::vector<VkDeviceQueueCreateInfo> queueCreateInfos;
+        queueCreateInfos.reserve(uniqueQueueFamilies.size());
+        f32 queuePriority = 1.0f;
+        for (u32 family : uniqueQueueFamilies)
+            queueCreateInfos.emplace_back(VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO, nullptr, 0, family, 1, &queuePriority);
     }
 
     RendererContext::~RendererContext()
     {
+        CGE_TRACE("Destroying surface.");
+        SDL_Vulkan_DestroySurface(_instance, _surface, nullptr);
+
         CGE_TRACE("Destroying instance.");
         vkDestroyInstance(_instance, nullptr);
     }

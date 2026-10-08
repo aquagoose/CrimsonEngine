@@ -17,7 +17,7 @@ namespace cge::VkUtils
 {
     inline std::string ResultToString(VkResult result)
     {
-#define STR(res) case VK_##res: return "VK_"#res;
+#define STR(res) case VK_##res: return #res;
         switch (result)
         {
             STR(SUCCESS)
@@ -76,7 +76,22 @@ namespace cge::VkUtils
 #undef STR
     }
 
-    // todo u32
+    inline std::string PhysicalDeviceTypeToString(VkPhysicalDeviceType type)
+    {
+#define STR(str) case VK_PHYSICAL_DEVICE_TYPE_##str: return #str;
+        switch (type)
+        {
+            STR(OTHER)
+            STR(INTEGRATED_GPU)
+            STR(DISCRETE_GPU)
+            STR(VIRTUAL_GPU)
+            STR(CPU)
+            default:
+                return "unknown";
+        }
+#undef STR
+    }
+
     inline std::string APIVersionToString(u32 version)
     {
         // the version has a variant component but since its not used (currently) we can just ignore it.
