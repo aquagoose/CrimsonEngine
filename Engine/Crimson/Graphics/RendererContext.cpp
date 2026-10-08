@@ -15,6 +15,8 @@ namespace cge
 {
     void RendererContext::RecreateSwapchain(u32 width, u32 height, VkPresentModeKHR presentMode)
     {
+        CGE_VK_CHECK(vkQueueWaitIdle(_presentQueue), "Wait for queue idle");
+
         VkSwapchainKHR oldSwapchain = _swapchain;
 
         VkSurfaceCapabilitiesKHR surfaceCapabilities;
@@ -62,9 +64,24 @@ namespace cge
 
         if (oldSwapchain)
         {
+            CGE_TRACE("Destroying old swapchain images.");
+            for (VkImageView imageView : _swapchainImageViews)
+                vkDestroyImageView(_device, imageView, nullptr);
+
             CGE_TRACE("Destroying old swapchain.")
             vkDestroySwapchainKHR(_device, oldSwapchain, nullptr);
         }
+
+        _swapchainImages.clear();
+        _swapchainImageViews.clear();
+
+        u32 numSwapchainImages;
+        vkGetSwapchainImagesKHR(_device, _swapchain, &numSwapchainImages, nullptr);
+        _swapchainImages.resize(numSwapchainImages);
+        vkGetSwapchainImagesKHR(_device, _swapchain, &numSwapchainImages, _swapchainImages.data());
+
+        for (VkImage image : _swapchainImages)
+            _swapchainImageViews.push_back(CreateImageView(image, swapchainInfo.imageFormat));
     }
 
     RendererContext::RendererContext(SDL_Window* window)
@@ -219,6 +236,10 @@ namespace cge
     {
         vkDeviceWaitIdle(_device);
 
+        CGE_TRACE("Destroying swapchain images.");
+        for (VkImageView view : _swapchainImageViews)
+            vkDestroyImageView(_device, view, nullptr);
+
         CGE_TRACE("Destroying swapchain.");
         vkDestroySwapchainKHR(_device, _swapchain, nullptr);
 
@@ -230,5 +251,37 @@ namespace cge
 
         CGE_TRACE("Destroying instance.");
         vkDestroyInstance(_instance, nullptr);
+    }
+
+    VkImageView RendererContext::CreateImageView(VkImage image, VkFormat format) const
+    {
+        VkImageViewCreateInfo viewInfo
+        {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            .image = image,
+            .viewType = VK_IMAGE_VIEW_TYPE_2D,
+            .format = format,
+            .components =
+            {
+                .r = VK_COMPONENT_SWIZZLE_IDENTITY,
+                .g = VK_COMPONENT_SWIZZLE_IDENTITY,
+                .b = VK_COMPONENT_SWIZZLE_IDENTITY,
+                .a = VK_COMPONENT_SWIZZLE_IDENTITY
+            },
+            .subresourceRange =
+            {
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
+        };
+
+        CGE_TRACE("Creating image view.");
+        VkImageView view;
+        CGE_VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &view), "Create image view");
+
+        return view;
     }
 }

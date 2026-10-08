@@ -5,6 +5,8 @@
 #include <vulkan/vulkan.h>
 #include <SDL3/SDL.h>
 
+#include <vector>
+
 namespace cge
 {
     class RendererContext
@@ -14,6 +16,8 @@ namespace cge
         VkPhysicalDevice _physicalDevice;
         VkDevice _device;
         VkSwapchainKHR _swapchain{};
+        std::vector<VkImage> _swapchainImages;
+        std::vector<VkImageView> _swapchainImageViews;
 
         u32 _graphicsQueueIndex;
         VkQueue _graphicsQueue;
@@ -27,5 +31,7 @@ namespace cge
     public:
         explicit RendererContext(SDL_Window* window);
         ~RendererContext();
+
+        VkImageView CreateImageView(VkImage image, VkFormat format) const;
     };
 }
