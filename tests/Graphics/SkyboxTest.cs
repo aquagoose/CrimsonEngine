@@ -6,6 +6,8 @@ using Crimson.Engine;
 using Crimson.Graphics;
 using Crimson.Graphics.Materials;
 using Crimson.Graphics.Primitives;
+using Crimson.Input;
+using Crimson.Platform;
 
 AppInfo info = new AppInfo("Skybox Test", "1.0.0");
 App.Run(in info, new SkyboxTest());
@@ -33,6 +35,14 @@ class SkyboxTest : Application
 
     public override void Loop(float dt)
     {
+        if (Input.IsKeyPressed(Key.Escape))
+            App.Close();
+        
+        if (Input.IsKeyPressed(Key.Space))
+            Console.WriteLine("Space pressed!");
+        if (Input.IsKeyDown(Key.Enter))
+            Console.WriteLine("Enter down!");
+        
         _value += dt * 0.5f;
         if (_value >= float.Pi * 5) 
             _value -= float.Pi * 2 * 5;

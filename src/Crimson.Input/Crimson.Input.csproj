@@ -1,1 +1,7 @@
-﻿<Project Sdk="Microsoft.NET.Sdk" />
+﻿<Project Sdk="Microsoft.NET.Sdk">
+  <ItemGroup>
+    <ProjectReference Include="..\Crimson.Math\Crimson.Math.csproj" />
+    <ProjectReference Include="..\Crimson.Physics\Crimson.Physics.csproj" />
+    <ProjectReference Include="..\Crimson.Platform\Crimson.Platform.csproj" />
+  </ItemGroup>
+</Project>

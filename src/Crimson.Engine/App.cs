@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿global using CInput = Crimson.Input.Input; // redefine as CInput to stop needing to put Input.Input everywhere
+using System.Reflection;
 using Crimson.Core;
 using Crimson.Graphics;
 using Crimson.Math;
@@ -75,10 +76,13 @@ public static class App
         Logger.Debug("Initializing window.");
         Window.Init(in info.Window);
         
-        Logger.Debug("Initializing events.");
+        Logger.Debug("Initializing Event subsystem.");
         Events.Init();
-        Events.WindowClosed += WindowClosed;
+        Events.WindowClosed += Close;
         Events.Resized += Resize;
+        
+        Logger.Debug("Initializing Input subsystem.");
+        CInput.Init();
         
         Logger.Debug("Initializing renderer.");
         Renderer.Init(new SDL.Window(Window.Handle));
@@ -88,6 +92,7 @@ public static class App
         _isRunning = true;
         while (IsRunning)
         {
+            CInput.Update();
             Events.Poll();
             
             Renderer.NewFrame();
@@ -100,6 +105,7 @@ public static class App
         
         _application.Dispose();
         Renderer.Free();
+        CInput.Free();
         Events.Free();
         Window.Free();
     }
@@ -107,7 +113,7 @@ public static class App
     /// <summary>
     /// Gracefully close and quit the application.
     /// </summary>
-    public static void WindowClosed()
+    public static void Close()
     {
         _isRunning = false;
     }
