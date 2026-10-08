@@ -1,4 +1,5 @@
-﻿using Crimson.Platform;
+﻿using System.Numerics;
+using Crimson.Platform;
 
 namespace Crimson.Input;
 
@@ -9,6 +10,19 @@ public static class Input
 {
     private static HashSet<Key> _keysDown = null!;
     private static HashSet<Key> _keysPressed = null!;
+
+    private static Vector2 _mousePosition;
+    private static Vector2 _mouseDelta;
+
+    /// <summary>
+    /// Gets the absolute mouse position in pixel coordinates, relative to the top-left corner of the window.
+    /// </summary>
+    public static Vector2 MousePosition => _mousePosition;
+
+    /// <summary>
+    /// Gets the change in mouse position since the last frame, in pixel coordinates.
+    /// </summary>
+    public static Vector2 MouseDelta => _mouseDelta;
 
     /// <summary>
     /// Check if the given key is held down.
@@ -34,6 +48,8 @@ public static class Input
         
         Events.KeyDown += OnKeyDown;
         Events.KeyUp += OnKeyUp;
+
+        Events.MouseMove += OnMouseMove;
     }
 
     /// <summary>
@@ -43,6 +59,8 @@ public static class Input
     {
         Events.KeyDown -= OnKeyDown;
         Events.KeyUp -= OnKeyUp;
+        
+        Events.MouseMove -= OnMouseMove;
     }
 
     /// <summary>
@@ -53,6 +71,8 @@ public static class Input
         // clear the pressed keys and mouse buttons to ensure they only exist in the set for one frame.
         // as input updating is done before event polling, this means this is cleared in time for event polling.
         _keysPressed.Clear();
+        
+        _mouseDelta = Vector2.Zero;
     }
 
     private static void OnKeyDown(Key key, bool repeat)
@@ -68,5 +88,11 @@ public static class Input
     {
         _keysDown.Remove(key);
         _keysPressed.Remove(key);
+    }
+    
+    private static void OnMouseMove(Vector2 position, Vector2 delta)
+    {
+        _mousePosition = position;
+        _mouseDelta += delta;
     }
 }

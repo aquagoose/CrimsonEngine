@@ -1,3 +1,4 @@
+using System.Numerics;
 using Crimson.Math;
 using piko.SDL3;
 
@@ -27,6 +28,11 @@ public static class Events
     /// Invoked when a key is released.
     /// </summary>
     public static event OnKeyUp KeyUp;
+
+    /// <summary>
+    /// Invoked when the mouse is moved.
+    /// </summary>
+    public static event OnMouseMove MouseMove;
 
     public static void Init()
     {
@@ -72,17 +78,28 @@ public static class Events
                     KeyUp(key);
                     break;
                 }
+
+                case SDL.EventType.MouseMotion:
+                {
+                    Vector2 position = new Vector2(e.Motion.X, e.Motion.Y);
+                    Vector2 delta = new Vector2(e.Motion.Xrel, e.Motion.Yrel);
+                    MouseMove(position, delta);
+                    break;
+                }
             }
         }
     }
 
     private static void Reset()
     {
+        // todo should these be in Window?
         WindowClosed = delegate { };
         Resized = delegate { };
 
         KeyDown = delegate { };
         KeyUp = delegate { };
+
+        MouseMove = delegate { };
     }
 
     public delegate void OnWindowClosed();
@@ -101,4 +118,11 @@ public static class Events
     /// </summary>
     /// <param name="key">The key that was released.</param>
     public delegate void OnKeyUp(Key key);
+
+    /// <summary>
+    /// Delegate used for mouse move events.
+    /// </summary>
+    /// <param name="position">The absolute position of the mouse on-screen, in pixel coordinates.</param>
+    /// <param name="delta">The change in the mouse position since the last frame, in pixel coordinates.</param>
+    public delegate void OnMouseMove(Vector2 position, Vector2 delta);
 }
