@@ -6,6 +6,8 @@
 #include <SDL3/SDL.h>
 
 #include <vector>
+#include <queue>
+#include <tuple>
 
 namespace cge
 {
@@ -26,6 +28,11 @@ namespace cge
         u32 _computeQueueIndex;
         VkQueue _computeQueue;
 
+        VkCommandPool _commandPool;
+        std::queue<VkCommandBuffer> _availableCommandBuffers;
+        std::queue<VkFence> _availableFences;
+        std::vector<std::tuple<VkCommandBuffer, VkFence>> _submittedCommandBuffers;
+
         void RecreateSwapchain(u32 width, u32 height, VkPresentModeKHR presentMode);
 
     public:
@@ -33,5 +40,8 @@ namespace cge
         ~RendererContext();
 
         VkImageView CreateImageView(VkImage image, VkFormat format) const;
+
+        VkCommandBuffer AcquireCommandBuffer();
+        void SubmitCommandBuffer(VkCommandBuffer cb);
     };
 }

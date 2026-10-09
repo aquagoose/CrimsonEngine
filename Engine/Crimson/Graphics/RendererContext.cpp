@@ -59,6 +59,9 @@ namespace cge
             .oldSwapchain = oldSwapchain
         };
 
+        if (_graphicsQueueIndex != _presentQueueIndex)
+            CGE_FATAL("Separate graphics and present queues are not yet supported!");
+
         CGE_TRACE("Creating swapchain.");
         CGE_VK_CHECK(vkCreateSwapchainKHR(_device, &swapchainInfo, nullptr, &_swapchain), "Create swapchain");
 
@@ -227,6 +230,16 @@ namespace cge
         vkGetDeviceQueue(_device, _presentQueueIndex, 0, &_presentQueue);
         vkGetDeviceQueue(_device, _computeQueueIndex, 0, &_computeQueue);
 
+        VkCommandPoolCreateInfo poolInfo
+        {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
+            .flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT,
+            .queueFamilyIndex = _graphicsQueueIndex
+        };
+
+        CGE_TRACE("Creating command pool.");
+        CGE_VK_CHECK(vkCreateCommandPool(_device, &poolInfo, nullptr, &_commandPool), "Create command pool");
+
         int width, height;
         SDL_GetWindowSizeInPixels(window, &width, &height);
         RecreateSwapchain(static_cast<u32>(width), static_cast<u32>(height), VK_PRESENT_MODE_FIFO_KHR);
@@ -242,6 +255,19 @@ namespace cge
 
         CGE_TRACE("Destroying swapchain.");
         vkDestroySwapchainKHR(_device, _swapchain, nullptr);
+
+        CGE_TRACE("Destroying fences.");
+        for (const auto& [_, fence] : _submittedCommandBuffers)
+            vkDestroyFence(_device, fence, nullptr);
+
+        while (!_availableFences.empty())
+        {
+            vkDestroyFence(_device, _availableFences.front(), nullptr);
+            _availableFences.pop();
+        }
+
+        CGE_TRACE("Destroying command pool.");
+        vkDestroyCommandPool(_device, _commandPool, nullptr);
 
         CGE_TRACE("Destroying device.");
         vkDestroyDevice(_device, nullptr);
@@ -283,5 +309,88 @@ namespace cge
         CGE_VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &view), "Create image view");
 
         return view;
+    }
+
+    VkCommandBuffer RendererContext::AcquireCommandBuffer()
+    {
+        VkCommandBuffer cb;
+        // return an available command buffer if there is one.
+        if (!_availableCommandBuffers.empty())
+        {
+            cb = _availableCommandBuffers.front();
+            _availableCommandBuffers.pop();
+        }
+        else
+        {
+            // otherwise allocate a new command buffer and return it.
+            VkCommandBufferAllocateInfo allocInfo
+            {
+                .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO,
+                .commandPool = _commandPool,
+                .level = VK_COMMAND_BUFFER_LEVEL_PRIMARY,
+                .commandBufferCount = 1
+            };
+
+            CGE_TRACE("Allocating new command buffer.");
+            CGE_VK_CHECK(vkAllocateCommandBuffers(_device, &allocInfo, &cb), "Allocate command buffer");
+        }
+
+        VkCommandBufferBeginInfo beginInfo
+        {
+            .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO,
+            .flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT,
+        };
+
+        CGE_VK_CHECK(vkBeginCommandBuffer(cb, &beginInfo), "Begin command buffer");
+
+        return cb;
+    }
+
+    void RendererContext::SubmitCommandBuffer(VkCommandBuffer cb)
+    {
+        CGE_VK_CHECK(vkEndCommandBuffer(cb), "End command buffer");
+
+        VkSubmitInfo submitInfo
+        {
+            .sType = VK_STRUCTURE_TYPE_SUBMIT_INFO,
+            .commandBufferCount = 1,
+            .pCommandBuffers = &cb,
+        };
+
+        VkFence fence;
+        if (!_availableFences.empty())
+        {
+            fence = _availableFences.front();
+            _availableFences.pop();
+        }
+        else
+        {
+            VkFenceCreateInfo fenceInfo
+            {
+                .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO
+            };
+
+            CGE_TRACE("Creating fence.");
+            CGE_VK_CHECK(vkCreateFence(_device, &fenceInfo, nullptr, &fence), "Create fence");
+        }
+
+        CGE_VK_CHECK(vkQueueSubmit(_graphicsQueue, 1, &submitInfo, fence), "Submit queue");
+
+        _submittedCommandBuffers.emplace_back(cb, fence);
+
+        for (size_t i = 0; i < _submittedCommandBuffers.size(); i++)
+        {
+            const auto& [submittedBuffer, submittedFence] = _submittedCommandBuffers[i];
+
+            if (vkGetFenceStatus(_device, submittedFence) != VK_SUCCESS)
+                continue;
+
+            CGE_VK_CHECK(vkResetFences(_device, 1, &submittedFence), "Reset fences");
+            _availableCommandBuffers.push(submittedBuffer);
+            _availableFences.push(submittedFence);
+
+            std::erase(_submittedCommandBuffers, _submittedCommandBuffers[i]);
+            i--;
+        }
     }
 }

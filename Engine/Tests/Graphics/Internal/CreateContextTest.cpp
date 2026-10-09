@@ -13,6 +13,23 @@ int main(int argc, char* argv[])
 
     auto context = new cge::RendererContext(window);
 
+    bool running = true;
+    while (running)
+    {
+        SDL_Event event;
+        while (SDL_PollEvent(&event))
+        {
+            switch (event.type)
+            {
+                case SDL_EVENT_QUIT:
+                    running = false;
+            }
+        }
+
+        VkCommandBuffer cb = context->AcquireCommandBuffer();
+        context->SubmitCommandBuffer(cb);
+    }
+
     delete context;
     SDL_DestroyWindow(window);
     SDL_Quit();
