@@ -15,7 +15,7 @@ if (CGE_SUBSYSTEM_GRAPHICS)
     )
     list(APPEND CGE_SRC ${CGE_GRAPHICS_SRC})
     find_package(Vulkan REQUIRED)
-    list(APPEND CGE_LIBS Vulkan::Vulkan SDL3::SDL3)
+    list(APPEND CGE_LIBS Vulkan::Vulkan GPUOpen::VulkanMemoryAllocator SDL3::SDL3)
 endif ()
 
 add_library(Crimson STATIC ${CGE_SRC})

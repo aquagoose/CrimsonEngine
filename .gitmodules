@@ -1,3 +1,6 @@
 [submodule "Engine/External/SDL"]
 	path = Engine/External/SDL
 	url = https://github.com/libsdl-org/SDL/
+[submodule "Engine/External/VulkanMemoryAllocator"]
+	path = Engine/External/VulkanMemoryAllocator
+	url = https://github.com/GPUOpen-LibrariesAndSDKs/VulkanMemoryAllocator

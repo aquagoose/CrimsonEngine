@@ -3,6 +3,8 @@
 #include "Utils/VkUtils.h"
 
 #include <SDL3/SDL_vulkan.h>
+#define VMA_IMPLEMENTATION
+#include <vk_mem_alloc.h>
 
 #include <vector>
 #include <optional>
@@ -230,6 +232,17 @@ namespace cge
         vkGetDeviceQueue(_device, _presentQueueIndex, 0, &_presentQueue);
         vkGetDeviceQueue(_device, _computeQueueIndex, 0, &_computeQueue);
 
+        VmaAllocatorCreateInfo allocatorInfo
+        {
+            .physicalDevice = _physicalDevice,
+            .device = _device,
+            .instance = _instance,
+            .vulkanApiVersion = CGE_VK_API_VERSION,
+        };
+
+        CGE_TRACE("Creating VMA allocator.");
+        CGE_VK_CHECK(vmaCreateAllocator(&allocatorInfo, &_allocator), "Create VMA allocator");
+
         VkCommandPoolCreateInfo poolInfo
         {
             .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
@@ -279,6 +292,9 @@ namespace cge
 
         CGE_TRACE("Destroying command pool.");
         vkDestroyCommandPool(_device, _commandPool, nullptr);
+
+        CGE_TRACE("Destroying VMA allocator.");
+        vmaDestroyAllocator(_allocator);
 
         CGE_TRACE("Destroying device.");
         vkDestroyDevice(_device, nullptr);

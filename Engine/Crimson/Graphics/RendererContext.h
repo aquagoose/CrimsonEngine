@@ -3,6 +3,7 @@
 #include "Core/CoreTypes.h"
 
 #include <vulkan/vulkan.h>
+#include <vk_mem_alloc.h>
 #include <SDL3/SDL.h>
 
 #include <vector>
@@ -19,6 +20,8 @@ namespace cge
         VkSurfaceKHR _surface;
         VkPhysicalDevice _physicalDevice;
         VkDevice _device;
+        VmaAllocator _allocator;
+
         VkSwapchainKHR _swapchain{};
         std::vector<VkImage> _swapchainImages;
         std::vector<VkImageView> _swapchainImageViews;
