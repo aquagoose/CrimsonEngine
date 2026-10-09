@@ -13,6 +13,8 @@ namespace cge
 {
     class RendererContext
     {
+        SDL_Window* _window;
+
         VkInstance _instance;
         VkSurfaceKHR _surface;
         VkPhysicalDevice _physicalDevice;
@@ -20,6 +22,8 @@ namespace cge
         VkSwapchainKHR _swapchain{};
         std::vector<VkImage> _swapchainImages;
         std::vector<VkImageView> _swapchainImageViews;
+        VkFence _imageAvailableFence;
+        u32 _currentImage;
 
         u32 _graphicsQueueIndex;
         VkQueue _graphicsQueue;
@@ -41,7 +45,10 @@ namespace cge
 
         VkImageView CreateImageView(VkImage image, VkFormat format) const;
 
-        VkCommandBuffer AcquireCommandBuffer();
+        VkCommandBuffer GetCommandBuffer();
         void SubmitCommandBuffer(VkCommandBuffer cb);
+
+        VkImageView GetNextSwapchainImage(VkCommandBuffer cb);
+        void SubmitAndPresent(VkCommandBuffer cb);
     };
 }

@@ -87,7 +87,7 @@ namespace cge
             _swapchainImageViews.push_back(CreateImageView(image, swapchainInfo.imageFormat));
     }
 
-    RendererContext::RendererContext(SDL_Window* window)
+    RendererContext::RendererContext(SDL_Window* window) : _window(window)
     {
         const char* appName = SDL_GetAppMetadataProperty(SDL_PROP_APP_METADATA_NAME_STRING);
         if (!appName)
@@ -243,11 +243,22 @@ namespace cge
         int width, height;
         SDL_GetWindowSizeInPixels(window, &width, &height);
         RecreateSwapchain(static_cast<u32>(width), static_cast<u32>(height), VK_PRESENT_MODE_FIFO_KHR);
+
+        VkFenceCreateInfo fenceInfo
+        {
+            .sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO
+        };
+
+        CGE_TRACE("Creating image available fence.")
+        CGE_VK_CHECK(vkCreateFence(_device, &fenceInfo, nullptr, &_imageAvailableFence), "Create image available fence");
     }
 
     RendererContext::~RendererContext()
     {
         vkDeviceWaitIdle(_device);
+
+        CGE_TRACE("Destroying image available fence.");
+        vkDestroyFence(_device, _imageAvailableFence, nullptr);
 
         CGE_TRACE("Destroying swapchain images.");
         for (VkImageView view : _swapchainImageViews)
@@ -311,7 +322,7 @@ namespace cge
         return view;
     }
 
-    VkCommandBuffer RendererContext::AcquireCommandBuffer()
+    VkCommandBuffer RendererContext::GetCommandBuffer()
     {
         VkCommandBuffer cb;
         // return an available command buffer if there is one.
@@ -392,5 +403,87 @@ namespace cge
             std::erase(_submittedCommandBuffers, _submittedCommandBuffers[i]);
             i--;
         }
+    }
+
+    VkImageView RendererContext::GetNextSwapchainImage(VkCommandBuffer cb)
+    {
+        VkResult result = vkAcquireNextImageKHR(_device, _swapchain, UINT64_MAX, VK_NULL_HANDLE, _imageAvailableFence, &_currentImage);
+        switch (result)
+        {
+            case VK_SUCCESS: break;
+            // recreate swapchain if needed
+            case VK_SUBOPTIMAL_KHR:
+            case VK_ERROR_SURFACE_LOST_KHR:
+            {
+                int w, h;
+                SDL_GetWindowSizeInPixels(_window, &w, &h);
+                RecreateSwapchain(static_cast<u32>(w), static_cast<u32>(h), VK_PRESENT_MODE_FIFO_KHR);
+                break;
+            }
+            default:
+                CGE_VK_CHECK(result, "Acquire next image");
+        }
+
+        vkWaitForFences(_device, 1, &_imageAvailableFence, VK_TRUE, UINT64_MAX);
+        vkResetFences(_device, 1, &_imageAvailableFence);
+
+        VkImageMemoryBarrier barrier
+        {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+            .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT,
+            .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            .oldLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+            .newLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            .image = _swapchainImages[_currentImage],
+            .subresourceRange =
+            {
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
+        };
+
+        vkCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+        return _swapchainImageViews[_currentImage];
+    }
+
+    void RendererContext::SubmitAndPresent(VkCommandBuffer cb)
+    {
+        VkImageMemoryBarrier barrier
+        {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+            .srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
+            .dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT,
+            .oldLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            .newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+            .image = _swapchainImages[_currentImage],
+            .subresourceRange =
+            {
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
+        };
+
+        vkCmdPipelineBarrier(cb, VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+                             VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT, 0, 0, nullptr, 0, nullptr, 1, &barrier);
+
+        SubmitCommandBuffer(cb);
+
+        VkPresentInfoKHR presentInfo
+        {
+            .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+            .swapchainCount = 1,
+            .pSwapchains = &_swapchain,
+            .pImageIndices = &_currentImage,
+        };
+
+        CGE_VK_CHECK(vkQueuePresentKHR(_graphicsQueue, &presentInfo), "Present");
     }
 }

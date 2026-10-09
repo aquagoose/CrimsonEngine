@@ -26,8 +26,32 @@ int main(int argc, char* argv[])
             }
         }
 
-        VkCommandBuffer cb = context->AcquireCommandBuffer();
-        context->SubmitCommandBuffer(cb);
+        VkCommandBuffer cb = context->GetCommandBuffer();
+        VkImageView image = context->GetNextSwapchainImage(cb);
+
+        VkRenderingAttachmentInfo colorAttachment
+        {
+            .sType = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO,
+            .imageView = image,
+            .imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+            .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+            .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+            .clearValue = { 1.0f, 0.5f, 0.25f, 1.0f }
+        };
+
+        VkRenderingInfo renderingInfo
+        {
+            .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+            .renderArea = { 0, 0, 1280, 720 },
+            .layerCount = 1,
+            .colorAttachmentCount = 1,
+            .pColorAttachments = &colorAttachment,
+        };
+
+        vkCmdBeginRendering(cb, &renderingInfo);
+        vkCmdEndRendering(cb);
+
+        context->SubmitAndPresent(cb);
     }
 
     delete context;
