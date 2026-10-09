@@ -413,7 +413,6 @@ namespace cge
             case VK_SUCCESS: break;
             // recreate swapchain if needed
             case VK_SUBOPTIMAL_KHR:
-            case VK_ERROR_SURFACE_LOST_KHR:
             {
                 int w, h;
                 SDL_GetWindowSizeInPixels(_window, &w, &h);
@@ -422,6 +421,7 @@ namespace cge
             }
             default:
                 CGE_VK_CHECK(result, "Acquire next image");
+                break;
         }
 
         vkWaitForFences(_device, 1, &_imageAvailableFence, VK_TRUE, UINT64_MAX);
@@ -484,6 +484,21 @@ namespace cge
             .pImageIndices = &_currentImage,
         };
 
-        CGE_VK_CHECK(vkQueuePresentKHR(_graphicsQueue, &presentInfo), "Present");
+        VkResult result = vkQueuePresentKHR(_graphicsQueue, &presentInfo);
+        switch (result)
+        {
+            case VK_SUCCESS: break;
+            // recreate swapchain if needed
+            case VK_SUBOPTIMAL_KHR:
+            {
+                int w, h;
+                SDL_GetWindowSizeInPixels(_window, &w, &h);
+                RecreateSwapchain(w, h, VK_PRESENT_MODE_FIFO_KHR);
+                break;
+            }
+            default:
+                CGE_VK_CHECK(result, "Present");
+                break;
+        }
     }
 }
