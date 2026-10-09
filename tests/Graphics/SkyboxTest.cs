@@ -38,12 +38,6 @@ class SkyboxTest : Application
         if (Input.IsKeyPressed(Key.Escape))
             App.Close();
         
-        if (Input.IsKeyPressed(Key.Space))
-            Console.WriteLine("Space pressed!");
-        if (Input.IsKeyDown(Key.Enter))
-            Console.WriteLine("Enter down!");
-        Console.WriteLine($"Pos: {Input.MousePosition}, Delta: {Input.MouseDelta}");
-        
         _value += dt * 0.5f;
         if (_value >= float.Pi * 5) 
             _value -= float.Pi * 2 * 5;
