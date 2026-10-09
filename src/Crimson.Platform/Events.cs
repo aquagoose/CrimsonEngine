@@ -30,6 +30,16 @@ public static class Events
     public static event OnKeyUp KeyUp;
 
     /// <summary>
+    /// Invoked when a mouse button is pressed.
+    /// </summary>
+    public static event OnMouseButtonDown MouseButtonDown;
+
+    /// <summary>
+    /// Invoked when a mouse button is released.
+    /// </summary>
+    public static event OnMouseButtonUp MouseButtonUp;
+    
+    /// <summary>
     /// Invoked when the mouse is moved.
     /// </summary>
     public static event OnMouseMove MouseMove;
@@ -79,6 +89,18 @@ public static class Events
                     break;
                 }
 
+                case SDL.EventType.MouseButtonDown:
+                {
+                    MouseButton button = SDLUtils.ButtonIndexToButton(e.Button.Button);
+                    MouseButtonDown(button);
+                    break;
+                }
+                case SDL.EventType.MouseButtonUp:
+                {
+                    MouseButton button = SDLUtils.ButtonIndexToButton(e.Button.Button);
+                    MouseButtonUp(button);
+                    break;
+                }
                 case SDL.EventType.MouseMotion:
                 {
                     Vector2 position = new Vector2(e.Motion.X, e.Motion.Y);
@@ -99,6 +121,8 @@ public static class Events
         KeyDown = delegate { };
         KeyUp = delegate { };
 
+        MouseButtonDown = delegate { };
+        MouseButtonUp = delegate { };
         MouseMove = delegate { };
     }
 
@@ -119,6 +143,18 @@ public static class Events
     /// <param name="key">The key that was released.</param>
     public delegate void OnKeyUp(Key key);
 
+    /// <summary>
+    /// Delegate used for mouse button down events.
+    /// </summary>
+    /// <param name="button">The button that was pressed.</param>
+    public delegate void OnMouseButtonDown(MouseButton button);
+
+    /// <summary>
+    /// Delegate used for mouse button up events.
+    /// </summary>
+    /// <param name="button">The button that was released.</param>
+    public delegate void OnMouseButtonUp(MouseButton button);
+    
     /// <summary>
     /// Delegate used for mouse move events.
     /// </summary>

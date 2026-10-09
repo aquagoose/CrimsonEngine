@@ -28,8 +28,10 @@ class BasicInputTest : Application
         if (Input.IsKeyDown(Key.Enter))
             Console.WriteLine("Enter key down!");
         
-        if (Input.IsKeyDown(Key.M))
+        if (Input.IsMouseButtonDown(MouseButton.Left))
             Console.WriteLine($"Mouse pos: {Input.MousePosition}, delta: {Input.MouseDelta}");
+        if (Input.IsMouseButtonPressed(MouseButton.Right))
+            Console.WriteLine("Right mouse button pressed!");
         
         base.Loop(dt);
     }

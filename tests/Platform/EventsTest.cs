@@ -18,6 +18,8 @@ Events.WindowClosed += () => running = false;
 Events.Resized += size => Console.WriteLine($"Resized: {size}");
 Events.KeyDown += (key, repeat) => Console.WriteLine($"Key down: {key}, Repeat: {repeat}");
 Events.KeyUp += key => Console.WriteLine($"Key up: {key}");
+Events.MouseButtonDown += button => Console.WriteLine($"Button down: {button}");
+Events.MouseButtonUp += button => Console.WriteLine($"Button up: {button}");
 Events.MouseMove += (position, delta) => Console.WriteLine($"Mouse pos: {position}, delta: {delta}");
     
 while (running)

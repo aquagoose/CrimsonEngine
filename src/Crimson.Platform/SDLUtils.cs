@@ -129,4 +129,9 @@ internal static class SDLUtils
             _ => Key.Unknown
         };
     }
+
+    public static MouseButton ButtonIndexToButton(byte index)
+    {
+        return (MouseButton) index;
+    }
 }

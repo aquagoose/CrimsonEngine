@@ -11,6 +11,9 @@ public static class Input
     private static HashSet<Key> _keysDown = null!;
     private static HashSet<Key> _keysPressed = null!;
 
+    private static HashSet<MouseButton> _buttonsDown = null!;
+    private static HashSet<MouseButton> _buttonsPressed = null!;
+
     private static Vector2 _mousePosition;
     private static Vector2 _mouseDelta;
 
@@ -39,16 +42,35 @@ public static class Input
     public static bool IsKeyPressed(Key key) => _keysPressed.Contains(key);
 
     /// <summary>
+    /// Check if the given mouse button is held down.
+    /// </summary>
+    /// <param name="button">The mouse button to check.</param>
+    /// <returns><see langword="true"/> if the button is held down, <see langword="false"/> otherwise.</returns>
+    public static bool IsMouseButtonDown(MouseButton button) => _buttonsDown.Contains(button);
+
+    /// <summary>
+    /// Check if the given mouse button was pressed this frame.
+    /// </summary>
+    /// <param name="button">The mouse button to check.</param>
+    /// <returns><see langword="true"/> if the button was pressed this frame, <see langword="false"/> otherwise.</returns>
+    public static bool IsMouseButtonPressed(MouseButton button) => _buttonsPressed.Contains(button);
+
+    /// <summary>
     /// Initialize the Input subsystem.
     /// </summary>
     public static void Init()
     {
         _keysDown = [];
         _keysPressed = [];
+
+        _buttonsDown = [];
+        _buttonsPressed = [];
         
         Events.KeyDown += OnKeyDown;
         Events.KeyUp += OnKeyUp;
 
+        Events.MouseButtonDown += OnMouseButtonDown;
+        Events.MouseButtonUp += OnMouseButtonUp;
         Events.MouseMove += OnMouseMove;
     }
 
@@ -59,7 +81,9 @@ public static class Input
     {
         Events.KeyDown -= OnKeyDown;
         Events.KeyUp -= OnKeyUp;
-        
+
+        Events.MouseButtonDown -= OnMouseButtonDown;
+        Events.MouseButtonUp -= OnMouseButtonUp;
         Events.MouseMove -= OnMouseMove;
     }
 
@@ -71,6 +95,7 @@ public static class Input
         // clear the pressed keys and mouse buttons to ensure they only exist in the set for one frame.
         // as input updating is done before event polling, this means this is cleared in time for event polling.
         _keysPressed.Clear();
+        _buttonsPressed.Clear();
         
         _mouseDelta = Vector2.Zero;
     }
@@ -88,6 +113,18 @@ public static class Input
     {
         _keysDown.Remove(key);
         _keysPressed.Remove(key);
+    }
+    
+    private static void OnMouseButtonDown(MouseButton button)
+    {
+        _buttonsDown.Add(button);
+        _buttonsPressed.Add(button);
+    }
+    
+    private static void OnMouseButtonUp(MouseButton button)
+    {
+        _buttonsDown.Remove(button);
+        _buttonsPressed.Remove(button);
     }
     
     private static void OnMouseMove(Vector2 position, Vector2 delta)
