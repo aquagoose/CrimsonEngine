@@ -9,7 +9,7 @@ using piko.SDL3;
 if (OperatingSystem.IsLinux())
     SDL.SetHint(SDL.Hint.VideoDriver, "x11");
 
-WindowInfo windowInfo = new WindowInfo("Window Test", new Size<uint>(1280, 720), false);
+WindowInfo windowInfo = new WindowInfo("Window Test", new Size<uint>(1280, 720), false, false);
 Window.Init(in windowInfo);
 Thread.Sleep(5000);
 Window.Free();

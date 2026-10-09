@@ -9,12 +9,16 @@ using piko.SDL3;
 if (OperatingSystem.IsLinux())
     SDL.SetHint(SDL.Hint.VideoDriver, "x11");
 
-WindowInfo windowInfo = new WindowInfo("Events Test", new Size<uint>(1280, 720), true);
+WindowInfo windowInfo = new WindowInfo("Events Test", new Size<uint>(1280, 720), true, false);
 Window.Init(in windowInfo);
 Events.Init();
 
 bool running = true;
-Events.Quit += () => running = false;
+Events.WindowClosed += () => running = false;
+Events.Resized += size => Console.WriteLine($"Resized: {size}");
+Events.KeyDown += (key, repeat) => Console.WriteLine($"Key down: {key}, Repeat: {repeat}");
+Events.KeyUp += key => Console.WriteLine($"Key up: {key}");
+Events.MouseMove += (position, delta) => Console.WriteLine($"Mouse pos: {position}, delta: {delta}");
     
 while (running)
 {

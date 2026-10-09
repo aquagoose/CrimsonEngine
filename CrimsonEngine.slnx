@@ -8,6 +8,9 @@
     <File Path="tests\Graphics\HelloWorldTest.cs" />
     <File Path="tests\Graphics\SimpleMeshTest.cs" />
   </Folder>
+  <Folder Name="/tests/Input/">
+    <File Path="tests\Input\BasicInputTest.cs" />
+  </Folder>
   <Folder Name="/tests/Platform/">
     <File Path="tests\Platform\EventsTest.cs" />
     <File Path="tests\Platform\WindowTest.cs" />
