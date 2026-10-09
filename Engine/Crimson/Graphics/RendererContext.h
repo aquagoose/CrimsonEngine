@@ -12,6 +12,12 @@
 
 namespace cge
 {
+    struct VulkanBuffer
+    {
+        VkBuffer Buffer;
+        VmaAllocation Allocation;
+    };
+
     class RendererContext
     {
         SDL_Window* _window;
@@ -47,6 +53,9 @@ namespace cge
         ~RendererContext();
 
         VkImageView CreateImageView(VkImage image, VkFormat format) const;
+
+        VulkanBuffer CreateBuffer(u32 usageFlags, u32 size, bool dynamic = false);
+        void DestroyBuffer(VulkanBuffer& buffer);
 
         VkCommandBuffer GetCommandBuffer();
         void SubmitCommandBuffer(VkCommandBuffer cb);

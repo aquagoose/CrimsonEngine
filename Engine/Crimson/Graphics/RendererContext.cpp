@@ -338,6 +338,43 @@ namespace cge
         return view;
     }
 
+    VulkanBuffer RendererContext::CreateBuffer(u32 usageFlags, u32 size, bool dynamic)
+    {
+        u32 vmaFlags = 0;
+
+        // non-dynamic buffers must allow data to be uploaded from a transfer buffer, so automatically set that flag
+        // however if the buffer IS a transfer buffer, then we don't need to set the flag.
+        if (dynamic || (usageFlags & VK_BUFFER_USAGE_TRANSFER_SRC_BIT))
+            vmaFlags |= VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT;
+        else
+            usageFlags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
+
+        VkBufferCreateInfo bufferInfo
+        {
+            .sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+            .size = size,
+            .usage = usageFlags
+        };
+
+        VmaAllocationCreateInfo allocInfo
+        {
+            .usage = VMA_MEMORY_USAGE_AUTO,
+        };
+
+        CGE_TRACE("Creating {}KiB buffer.", size / 1024);
+        VulkanBuffer buffer{};
+        CGE_VK_CHECK(vmaCreateBuffer(_allocator, &bufferInfo, &allocInfo, &buffer.Buffer, &buffer.Allocation, nullptr), "Create buffer");
+
+        return buffer;
+    }
+
+    void RendererContext::DestroyBuffer(VulkanBuffer& buffer)
+    {
+        vmaDestroyBuffer(_allocator, buffer.Buffer, buffer.Allocation);
+        buffer.Buffer = VK_NULL_HANDLE;
+        buffer.Allocation = VMA_NULL;
+    }
+
     VkCommandBuffer RendererContext::GetCommandBuffer()
     {
         VkCommandBuffer cb;

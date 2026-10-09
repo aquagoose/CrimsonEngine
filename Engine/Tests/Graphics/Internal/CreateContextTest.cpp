@@ -13,6 +13,8 @@ int main(int argc, char* argv[])
 
     auto context = new cge::RendererContext(window);
 
+    auto buffer = context->CreateBuffer(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, 1);
+
     bool running = true;
     while (running)
     {
@@ -54,6 +56,7 @@ int main(int argc, char* argv[])
         context->SubmitAndPresent(cb);
     }
 
+    context->DestroyBuffer(buffer);
     delete context;
     SDL_DestroyWindow(window);
     SDL_Quit();
