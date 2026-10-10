@@ -19,13 +19,4 @@ namespace cge
 
     using f32 = float;
     using f64 = double;
-
-    template<typename T>
-    using Ptr = std::unique_ptr<T>;
-
-    template<typename T, typename... Args>
-    Ptr<T> MakeUnique(Args&&... args)
-    {
-        return std::make_unique<T>(std::forward<Args...>(args...));
-    }
 }

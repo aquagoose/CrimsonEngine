@@ -34,6 +34,7 @@ namespace cge
         };
 
         CGE_DEBUG("Swapchain size: {}x{}", extent.width, extent.height);
+        SwapchainSize = extent;
 
         u32 imageCount = CGE_VK_CLAMP(2, surfaceCapabilities.minImageCount, surfaceCapabilities.maxImageCount);
         CGE_DEBUG("Image Count: {}", imageCount);

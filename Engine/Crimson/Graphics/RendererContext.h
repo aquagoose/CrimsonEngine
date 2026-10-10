@@ -46,11 +46,16 @@ namespace cge
         std::queue<VkFence> _availableFences;
         std::vector<std::tuple<VkCommandBuffer, VkFence>> _submittedCommandBuffers;
 
-        void RecreateSwapchain(u32 width, u32 height, VkPresentModeKHR presentMode);
-
     public:
+        VkExtent2D SwapchainSize;
+
+        RendererContext(const RendererContext&) = delete;
+        RendererContext& operator =(const RendererContext&) = delete;
+
         explicit RendererContext(SDL_Window* window);
         ~RendererContext();
+
+        void RecreateSwapchain(u32 width, u32 height, VkPresentModeKHR presentMode);
 
         VkImageView CreateImageView(VkImage image, VkFormat format) const;
 
