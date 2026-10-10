@@ -1,7 +1,7 @@
-namespace Crimson.Engine.Entities;
+namespace Crimson.Engine.Actors;
 
 /// <summary>
-/// Scenes contain a list of entities and 
+/// Scenes contain a list of <see cref="Actor"/>s.
 /// </summary>
 public abstract class Scene : IDisposable
 {

@@ -2,7 +2,7 @@
 #:project ../src/Crimson.Engine/Crimson.Engine.csproj
 
 using Crimson.Engine;
-using Crimson.Engine.Entities;
+using Crimson.Engine.Actors;
 using Crimson.Graphics;
 
 AppInfo appInfo = new("Simple App Test", "1.0.0");

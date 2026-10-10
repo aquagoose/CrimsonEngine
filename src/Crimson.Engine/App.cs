@@ -1,7 +1,7 @@
 ﻿global using CInput = Crimson.Input.Input; // redefine as CInput to stop needing to put Input.Input everywhere
 using System.Reflection;
 using Crimson.Core;
-using Crimson.Engine.Entities;
+using Crimson.Engine.Actors;
 using Crimson.Graphics;
 using Crimson.Math;
 using Crimson.Platform;

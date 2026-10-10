@@ -4,7 +4,7 @@
 using System.Numerics;
 using Crimson.Core;
 using Crimson.Engine;
-using Crimson.Engine.Entities;
+using Crimson.Engine.Actors;
 using Crimson.Graphics;
 using Crimson.Graphics.Materials;
 using Crimson.Graphics.Primitives;

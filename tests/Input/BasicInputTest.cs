@@ -2,7 +2,7 @@
 #:project ../../src/Crimson.Engine/Crimson.Engine.csproj
 
 using Crimson.Engine;
-using Crimson.Engine.Entities;
+using Crimson.Engine.Actors;
 using Crimson.Graphics;
 using Crimson.Input;
 using Crimson.Platform;
