@@ -5,6 +5,13 @@ namespace Crimson.Engine.Actors;
 /// </summary>
 public abstract class Scene : IDisposable
 {
+    private readonly List<Actor> _actors;
+
+    protected Scene()
+    {
+        _actors = [];
+    }
+
     /// <summary>
     /// Runs once, when the scene is initialized.
     /// </summary>
