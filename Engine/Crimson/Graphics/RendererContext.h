@@ -21,6 +21,9 @@ namespace cge
 
     class RendererContext
     {
+        // 32MiB initial transfer buffer size
+        static constexpr u32 InitialTransferBufferSize = 32 * 1024 * 1024;
+
         SDL_Window* _window;
 
         VkInstance _instance;
@@ -28,6 +31,10 @@ namespace cge
         VkPhysicalDevice _physicalDevice;
         VkDevice _device;
         VmaAllocator _allocator;
+
+        VulkanBuffer _transferBuffer;
+        u32 _transferBufferSize;
+        u32 _transferBufferOffset;
 
         VkSwapchainKHR _swapchain{};
         std::vector<VkImage> _swapchainImages;
@@ -62,6 +69,8 @@ namespace cge
 
         VulkanBuffer CreateBuffer(u32 usageFlags, u32 size, bool dynamic = false);
         void DestroyBuffer(VulkanBuffer& buffer);
+        void* MapBuffer(const VulkanBuffer& buffer);
+        void UnmapBuffer(const VulkanBuffer& buffer);
 
         VkCommandBuffer GetCommandBuffer();
         void SubmitCommandBuffer(VkCommandBuffer cb);

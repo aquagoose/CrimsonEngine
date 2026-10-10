@@ -244,6 +244,11 @@ namespace cge
         CGE_TRACE("Creating VMA allocator.");
         CGE_VK_CHECK(vmaCreateAllocator(&allocatorInfo, &_allocator), "Create VMA allocator");
 
+        CGE_TRACE("Creating transfer buffer.");
+        _transferBufferSize = InitialTransferBufferSize;
+        _transferBufferOffset = 0;
+        _transferBuffer = CreateBuffer(VK_BUFFER_USAGE_TRANSFER_SRC_BIT, _transferBufferSize);
+
         VkCommandPoolCreateInfo poolInfo
         {
             .sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO,
@@ -293,6 +298,9 @@ namespace cge
 
         CGE_TRACE("Destroying command pool.");
         vkDestroyCommandPool(_device, _commandPool, nullptr);
+
+        CGE_TRACE("Destroying transfer buffer.");
+        DestroyBuffer(_transferBuffer);
 
         CGE_TRACE("Destroying VMA allocator.");
         vmaDestroyAllocator(_allocator);
@@ -374,6 +382,18 @@ namespace cge
         vmaDestroyBuffer(_allocator, buffer.Buffer, buffer.Allocation);
         buffer.Buffer = VK_NULL_HANDLE;
         buffer.Allocation = VMA_NULL;
+    }
+
+    void* RendererContext::MapBuffer(const VulkanBuffer& buffer)
+    {
+        void* data;
+        CGE_VK_CHECK(vmaMapMemory(_allocator, buffer.Allocation, &data), "Map buffer");
+        return data;
+    }
+
+    void RendererContext::UnmapBuffer(const VulkanBuffer& buffer)
+    {
+        vmaUnmapMemory(_allocator, buffer.Allocation);
     }
 
     VkCommandBuffer RendererContext::GetCommandBuffer()
