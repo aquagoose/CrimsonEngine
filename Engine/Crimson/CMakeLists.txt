@@ -6,6 +6,8 @@ file(GLOB_RECURSE CGE_SRC CONFIGURE_DEPENDS
         # the following libraries are not optional and are always added
         Core/*.h
         Core/*.cpp
+        Math/*.h
+        Math/*.cpp
 )
 
 if (CGE_SUBSYSTEM_GRAPHICS)
