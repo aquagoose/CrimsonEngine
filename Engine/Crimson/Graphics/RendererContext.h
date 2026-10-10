@@ -19,6 +19,14 @@ namespace cge
         VmaAllocation Allocation;
     };
 
+    struct VulkanImage
+    {
+        VkImage Image;
+        VmaAllocation Allocation;
+        VkImageView View;
+        VkImageLayout Layout;
+    };
+
     class RendererContext
     {
         // 32MiB initial transfer buffer size
@@ -54,6 +62,8 @@ namespace cge
         std::queue<VkFence> _availableFences;
         std::vector<std::tuple<VkCommandBuffer, VkFence>> _submittedCommandBuffers;
 
+        VkImageView CreateImageView(VkImage image, VkFormat format) const;
+
     public:
         VkExtent2D SwapchainSize;
 
@@ -65,7 +75,8 @@ namespace cge
 
         void RecreateSwapchain(u32 width, u32 height, VkPresentModeKHR presentMode);
 
-        VkImageView CreateImageView(VkImage image, VkFormat format) const;
+        VulkanImage CreateImage(VkImageType type, VkFormat format, VkExtent3D size, u32 mipLevels, u32 arrayLayers, u32 usage);
+        void DestroyImage(VulkanImage& image);
 
         VulkanBuffer CreateBuffer(u32 usageFlags, u32 size, bool dynamic = false);
         void DestroyBuffer(VulkanBuffer& buffer);

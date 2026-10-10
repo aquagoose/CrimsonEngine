@@ -15,79 +15,36 @@
 
 namespace cge
 {
-    void RendererContext::RecreateSwapchain(u32 width, u32 height, VkPresentModeKHR presentMode)
+    VkImageView RendererContext::CreateImageView(VkImage image, VkFormat format) const
     {
-        CGE_VK_CHECK(vkQueueWaitIdle(_presentQueue), "Wait for queue idle");
-
-        VkSwapchainKHR oldSwapchain = _swapchain;
-
-        VkSurfaceCapabilitiesKHR surfaceCapabilities;
-        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_physicalDevice, _surface, &surfaceCapabilities);
-
-        CGE_TRACE("Requesting swapchain size {}x{}", width, height);
-
-        // clamp the width & height to within the supported range.
-        VkExtent2D extent
+        VkImageViewCreateInfo viewInfo
         {
-            .width = CGE_VK_CLAMP(width, surfaceCapabilities.minImageExtent.width, surfaceCapabilities.maxImageExtent.width),
-            .height = CGE_VK_CLAMP(height, surfaceCapabilities.minImageExtent.height, surfaceCapabilities.maxImageExtent.height)
+            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+            .image = image,
+            .viewType = VK_IMAGE_VIEW_TYPE_2D,
+            .format = format,
+            .components =
+            {
+                .r = VK_COMPONENT_SWIZZLE_IDENTITY,
+                .g = VK_COMPONENT_SWIZZLE_IDENTITY,
+                .b = VK_COMPONENT_SWIZZLE_IDENTITY,
+                .a = VK_COMPONENT_SWIZZLE_IDENTITY
+            },
+            .subresourceRange =
+            {
+                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                .baseMipLevel = 0,
+                .levelCount = 1,
+                .baseArrayLayer = 0,
+                .layerCount = 1
+            }
         };
 
-        CGE_DEBUG("Swapchain size: {}x{}", extent.width, extent.height);
-        SwapchainSize = extent;
+        CGE_TRACE("Creating image view.");
+        VkImageView view;
+        CGE_VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &view), "Create image view");
 
-        u32 imageCount = CGE_VK_CLAMP(2, surfaceCapabilities.minImageCount, surfaceCapabilities.maxImageCount);
-        CGE_DEBUG("Image Count: {}", imageCount);
-
-        /*u32 numPresentModes;
-        vkGetPhysicalDeviceSurfacePresentModesKHR(_physicalDevice, _surface, &numPresentModes, nullptr);
-        std::vector<VkPresentModeKHR> presentModes(numPresentModes);
-        vkGetPhysicalDeviceSurfacePresentModesKHR(_physicalDevice, _surface, &numPresentModes, presentModes.data());*/
-
-        VkSwapchainCreateInfoKHR swapchainInfo
-        {
-            .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
-            .surface = _surface,
-            .minImageCount = imageCount,
-            .imageFormat = VK_FORMAT_B8G8R8A8_UNORM,
-            .imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
-            .imageExtent = extent,
-            .imageArrayLayers = 1,
-            .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
-            .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
-            .preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
-            .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
-            .presentMode = presentMode, // todo check present mode is supported
-            .clipped = false,
-            .oldSwapchain = oldSwapchain
-        };
-
-        if (_graphicsQueueIndex != _presentQueueIndex)
-            CGE_FATAL("Separate graphics and present queues are not yet supported!");
-
-        CGE_TRACE("Creating swapchain.");
-        CGE_VK_CHECK(vkCreateSwapchainKHR(_device, &swapchainInfo, nullptr, &_swapchain), "Create swapchain");
-
-        if (oldSwapchain)
-        {
-            CGE_TRACE("Destroying old swapchain images.");
-            for (VkImageView imageView : _swapchainImageViews)
-                vkDestroyImageView(_device, imageView, nullptr);
-
-            CGE_TRACE("Destroying old swapchain.")
-            vkDestroySwapchainKHR(_device, oldSwapchain, nullptr);
-        }
-
-        _swapchainImages.clear();
-        _swapchainImageViews.clear();
-
-        u32 numSwapchainImages;
-        vkGetSwapchainImagesKHR(_device, _swapchain, &numSwapchainImages, nullptr);
-        _swapchainImages.resize(numSwapchainImages);
-        vkGetSwapchainImagesKHR(_device, _swapchain, &numSwapchainImages, _swapchainImages.data());
-
-        for (VkImage image : _swapchainImages)
-            _swapchainImageViews.push_back(CreateImageView(image, swapchainInfo.imageFormat));
+        return view;
     }
 
     RendererContext::RendererContext(SDL_Window* window) : _window(window)
@@ -315,36 +272,119 @@ namespace cge
         vkDestroyInstance(_instance, nullptr);
     }
 
-    VkImageView RendererContext::CreateImageView(VkImage image, VkFormat format) const
+    void RendererContext::RecreateSwapchain(u32 width, u32 height, VkPresentModeKHR presentMode)
     {
-        VkImageViewCreateInfo viewInfo
+        CGE_VK_CHECK(vkQueueWaitIdle(_presentQueue), "Wait for queue idle");
+
+        VkSwapchainKHR oldSwapchain = _swapchain;
+
+        VkSurfaceCapabilitiesKHR surfaceCapabilities;
+        vkGetPhysicalDeviceSurfaceCapabilitiesKHR(_physicalDevice, _surface, &surfaceCapabilities);
+
+        CGE_TRACE("Requesting swapchain size {}x{}", width, height);
+
+        // clamp the width & height to within the supported range.
+        VkExtent2D extent
         {
-            .sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
-            .image = image,
-            .viewType = VK_IMAGE_VIEW_TYPE_2D,
-            .format = format,
-            .components =
-            {
-                .r = VK_COMPONENT_SWIZZLE_IDENTITY,
-                .g = VK_COMPONENT_SWIZZLE_IDENTITY,
-                .b = VK_COMPONENT_SWIZZLE_IDENTITY,
-                .a = VK_COMPONENT_SWIZZLE_IDENTITY
-            },
-            .subresourceRange =
-            {
-                .aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
-                .baseMipLevel = 0,
-                .levelCount = 1,
-                .baseArrayLayer = 0,
-                .layerCount = 1
-            }
+            .width = CGE_VK_CLAMP(width, surfaceCapabilities.minImageExtent.width, surfaceCapabilities.maxImageExtent.width),
+            .height = CGE_VK_CLAMP(height, surfaceCapabilities.minImageExtent.height, surfaceCapabilities.maxImageExtent.height)
         };
 
-        CGE_TRACE("Creating image view.");
-        VkImageView view;
-        CGE_VK_CHECK(vkCreateImageView(_device, &viewInfo, nullptr, &view), "Create image view");
+        CGE_DEBUG("Swapchain size: {}x{}", extent.width, extent.height);
+        SwapchainSize = extent;
 
-        return view;
+        u32 imageCount = CGE_VK_CLAMP(2, surfaceCapabilities.minImageCount, surfaceCapabilities.maxImageCount);
+        CGE_DEBUG("Image Count: {}", imageCount);
+
+        /*u32 numPresentModes;
+        vkGetPhysicalDeviceSurfacePresentModesKHR(_physicalDevice, _surface, &numPresentModes, nullptr);
+        std::vector<VkPresentModeKHR> presentModes(numPresentModes);
+        vkGetPhysicalDeviceSurfacePresentModesKHR(_physicalDevice, _surface, &numPresentModes, presentModes.data());*/
+
+        VkSwapchainCreateInfoKHR swapchainInfo
+        {
+            .sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+            .surface = _surface,
+            .minImageCount = imageCount,
+            .imageFormat = VK_FORMAT_B8G8R8A8_UNORM,
+            .imageColorSpace = VK_COLOR_SPACE_SRGB_NONLINEAR_KHR,
+            .imageExtent = extent,
+            .imageArrayLayers = 1,
+            .imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+            .imageSharingMode = VK_SHARING_MODE_EXCLUSIVE,
+            .preTransform = VK_SURFACE_TRANSFORM_IDENTITY_BIT_KHR,
+            .compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+            .presentMode = presentMode, // todo check present mode is supported
+            .clipped = false,
+            .oldSwapchain = oldSwapchain
+        };
+
+        if (_graphicsQueueIndex != _presentQueueIndex)
+            CGE_FATAL("Separate graphics and present queues are not yet supported!");
+
+        CGE_TRACE("Creating swapchain.");
+        CGE_VK_CHECK(vkCreateSwapchainKHR(_device, &swapchainInfo, nullptr, &_swapchain), "Create swapchain");
+
+        if (oldSwapchain)
+        {
+            CGE_TRACE("Destroying old swapchain images.");
+            for (VkImageView imageView : _swapchainImageViews)
+                vkDestroyImageView(_device, imageView, nullptr);
+
+            CGE_TRACE("Destroying old swapchain.")
+            vkDestroySwapchainKHR(_device, oldSwapchain, nullptr);
+        }
+
+        _swapchainImages.clear();
+        _swapchainImageViews.clear();
+
+        u32 numSwapchainImages;
+        vkGetSwapchainImagesKHR(_device, _swapchain, &numSwapchainImages, nullptr);
+        _swapchainImages.resize(numSwapchainImages);
+        vkGetSwapchainImagesKHR(_device, _swapchain, &numSwapchainImages, _swapchainImages.data());
+
+        for (VkImage image : _swapchainImages)
+            _swapchainImageViews.push_back(CreateImageView(image, swapchainInfo.imageFormat));
+    }
+
+    VulkanImage RendererContext::CreateImage(VkImageType type, VkFormat format, VkExtent3D size, u32 mipLevels, u32 arrayLayers, u32 usage)
+    {
+        VkImageCreateInfo imageInfo
+        {
+            .sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO,
+            .imageType = type,
+            .format = format,
+            .extent = size,
+            .mipLevels = mipLevels,
+            .arrayLayers = arrayLayers,
+            .samples = VK_SAMPLE_COUNT_1_BIT,
+            .tiling = VK_IMAGE_TILING_OPTIMAL,
+            .usage = usage,
+            .sharingMode = VK_SHARING_MODE_EXCLUSIVE,
+            .initialLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL
+        };
+
+        VmaAllocationCreateInfo allocInfo
+        {
+            .usage = VMA_MEMORY_USAGE_AUTO
+        };
+
+        VulkanImage image{};
+        image.Layout = imageInfo.initialLayout;
+        CGE_TRACE("Creating image.");
+        CGE_VK_CHECK(vmaCreateImage(_allocator, &imageInfo, &allocInfo, &image.Image, &image.Allocation, nullptr), "Create image");
+        image.View = CreateImageView(image.Image, format);
+
+        return image;
+    }
+
+    void RendererContext::DestroyImage(VulkanImage& image)
+    {
+        vkDestroyImageView(_device, image.View, nullptr);
+        vmaDestroyImage(_allocator, image.Image, image.Allocation);
+        image.Image = VK_NULL_HANDLE;
+        image.Allocation = VMA_NULL;
+        image.View = VK_NULL_HANDLE;
     }
 
     VulkanBuffer RendererContext::CreateBuffer(u32 usageFlags, u32 size, bool dynamic)
