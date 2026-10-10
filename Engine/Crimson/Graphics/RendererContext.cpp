@@ -555,4 +555,23 @@ namespace cge
                 break;
         }
     }
+
+    void RendererContext::BeginRenderPass(VkCommandBuffer cb, std::span<VkRenderingAttachmentInfo> colorAttachments)
+    {
+        VkRenderingInfo renderingInfo
+        {
+            .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
+            .renderArea = { .extent = SwapchainSize },
+            .layerCount = 1,
+            .colorAttachmentCount = static_cast<u32>(colorAttachments.size()),
+            .pColorAttachments = colorAttachments.data(),
+        };
+
+        vkCmdBeginRendering(cb, &renderingInfo);
+    }
+
+    void RendererContext::EndRenderPass(VkCommandBuffer cb)
+    {
+        vkCmdEndRendering(cb);
+    }
 }

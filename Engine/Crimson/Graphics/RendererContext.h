@@ -8,6 +8,7 @@
 
 #include <vector>
 #include <queue>
+#include <span>
 #include <tuple>
 
 namespace cge
@@ -67,5 +68,8 @@ namespace cge
 
         VkImageView GetNextSwapchainImage(VkCommandBuffer cb);
         void SubmitAndPresent(VkCommandBuffer cb);
+
+        void BeginRenderPass(VkCommandBuffer cb, std::span<VkRenderingAttachmentInfo> colorAttachments);
+        void EndRenderPass(VkCommandBuffer cb);
     };
 }

@@ -22,17 +22,7 @@ namespace cge
             .clearValue = { 1.0f, 0.5f, 0.25f, 1.0f }
         };
 
-        VkRenderingInfo renderInfo
-        {
-            .sType = VK_STRUCTURE_TYPE_RENDERING_INFO,
-            .renderArea = { .extent = _context->SwapchainSize },
-            .layerCount = 1,
-            .colorAttachmentCount = 1,
-            .pColorAttachments = &colorTarget
-        };
-
-        vkCmdBeginRendering(cb, &renderInfo);
-        vkCmdEndRendering(cb);
+        _context->BeginRenderPass(cb, {&colorTarget, 1});
 
         _context->SubmitAndPresent(cb);
     }
