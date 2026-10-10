@@ -4,6 +4,7 @@
 using System.Numerics;
 using Crimson.Core;
 using Crimson.Engine;
+using Crimson.Engine.Entities;
 using Crimson.Graphics;
 using Crimson.Graphics.Materials;
 using Crimson.Graphics.Primitives;
@@ -13,7 +14,7 @@ Logger.LogToConsole = true;
 AppInfo info = new AppInfo("Simple Mesh Test", "1.0.0");
 App.Run(in info, new SimpleMeshTest());
 
-class SimpleMeshTest : Application
+class SimpleMeshTest : Scene
 {
     private Texture _texture = null!;
     private UnlitMaterial _material = null!;

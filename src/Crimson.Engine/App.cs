@@ -1,6 +1,7 @@
 ﻿global using CInput = Crimson.Input.Input; // redefine as CInput to stop needing to put Input.Input everywhere
 using System.Reflection;
 using Crimson.Core;
+using Crimson.Engine.Entities;
 using Crimson.Graphics;
 using Crimson.Math;
 using Crimson.Platform;
@@ -17,6 +18,9 @@ public static class App
     private static string _appVersion = null!;
     private static Application _application = null!;
     private static bool _isRunning;
+
+    private static Scene _currentScene = null!;
+    private static Scene? _sceneToSwitch = null;
     
     /// <summary>
     /// The application name.
@@ -48,16 +52,27 @@ public static class App
     }
 
     /// <summary>
+    /// Get/set the current <see cref="Scene"/>.
+    /// </summary>
+    public static Scene CurrentScene
+    {
+        get => _currentScene;
+        set => _sceneToSwitch = value;
+    }
+
+    /// <summary>
     /// Run the application.
     /// <param name="info">The <see cref="AppInfo"/> to use on app startup.</param>
     /// <param name="application">A global <see cref="Crimson.Engine.Application"/> instance. If <see langword="null"/>
     /// is provided, a default one will be used.</param>
     /// </summary>
-    public static void Run(in AppInfo info, Application? application = null)
+    public static void Run(in AppInfo info, Scene scene, Application? application = null)
     {
         _appName = info.AppName;
         _appVersion = info.AppVersion;
         _application = application ?? new Application();
+
+        _currentScene = scene;
         
         Logger.Info($"App Name: {_appName}");
         Logger.Info($"App Version: {_appVersion}");
@@ -88,6 +103,7 @@ public static class App
         Renderer.Init(new SDL.Window(Window.Handle));
 
         _application.Init();
+        _currentScene.Init();
         
         _isRunning = true;
         while (IsRunning)
@@ -98,7 +114,19 @@ public static class App
             Renderer.NewFrame();
             
             _application.Tick(1.0f / 60.0f);
+            _currentScene.Tick(1.0f / 60.0f);
+            
             _application.Loop(1.0f / 60.0f);
+            _currentScene.Loop(1.0f / 60.0f);
+
+            if (_sceneToSwitch != null)
+            {
+                _currentScene.Dispose();
+                _currentScene = _sceneToSwitch;
+                _sceneToSwitch = null;
+                GC.Collect();
+                _currentScene.Init();
+            }
             
             Renderer.Render();
         }

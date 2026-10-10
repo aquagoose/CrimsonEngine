@@ -2,6 +2,7 @@
 #:project ../../src/Crimson.Engine/Crimson.Engine.csproj
 
 using Crimson.Engine;
+using Crimson.Engine.Entities;
 using Crimson.Graphics;
 using Crimson.Input;
 using Crimson.Platform;
@@ -9,7 +10,7 @@ using Crimson.Platform;
 AppInfo info = new AppInfo("Basic Input Test", "1.0.0");
 App.Run(in info, new BasicInputTest());
 
-class BasicInputTest : Application
+class BasicInputTest : Scene
 {
     public override void Init()
     {

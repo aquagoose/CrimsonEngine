@@ -3,6 +3,7 @@
 
 using System.Numerics;
 using Crimson.Engine;
+using Crimson.Engine.Entities;
 using Crimson.Graphics;
 using Crimson.Graphics.Materials;
 using Crimson.Graphics.Primitives;
@@ -12,7 +13,7 @@ using Crimson.Platform;
 AppInfo info = new AppInfo("Skybox Test", "1.0.0");
 App.Run(in info, new SkyboxTest());
 
-class SkyboxTest : Application
+class SkyboxTest : Scene
 {
     private Skybox _skybox = null!;
     private Texture _texture = null!;
